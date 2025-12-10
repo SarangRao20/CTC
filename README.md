@@ -1,85 +1,87 @@
+# 🌟 Smart Assistive System for Intellectually Disabled Individuals
+
+A fully software-based assistive platform designed to help intellectually disabled individuals manage daily routines through guided tasks, reminders, and communication support.
+
+---
+
+## 📌 Executive Summary
+This system empowers intellectually disabled individuals by offering step-by-step task guidance, daily schedules, communication tools, and caregiver dashboards. The focus is on simplicity, accessibility, and independence, without relying on any hardware. It reduces caregiver burden and enables structured daily living.
+
+---
+
+## 🎯 Approach
+
+- Accessible web/mobile application  
+- Large buttons, minimal text, friendly visuals  
+- Step-by-step audio–visual task guidance  
+- Text-to-speech & speech-to-text communication aid  
+- Routine tracking and caregiver reports  
+- Visual & audio reminders  
+
+---
+
+## 🧩 Tech Stack
+
+**Frontend:** HTML, CSS, Bootstrap, JavaScript / React  
+**Backend:** Python Flask  
+**Database:** SQLite / PostgreSQL  
+**AI:** gTTS, SpeechRecognition, Google Speech APIs  
+
+---
+
+## 🔄 Workflow
+
+1. **User Login / Caregiver Login**  
+2. **Dashboard** shows daily tasks and reminders  
+3. **Task Execution** with step-by-step audio & images  
+4. **Communication Assistance** converts speech to text and text to speech  
+5. **Progress Tracking** stored in the database  
+6. **Notifications** triggered based on schedule  
+
+---
+
+## 🏗️ Software Architecture
+
+```mermaid
 graph TD
-    User((User))
-    Caregiver((Caregiver))
-    
-    subgraph Frontend [Web/Mobile App]
-        UI[Accessible UI (Large Buttons, Icons)]
-        TaskModule[Task Guidance Interface]
-        CommModule[Communication Assist UI]
-        ReportsView[Progress Reports]
+
+    U[User / Caregiver] --> UI[Web / Mobile Frontend]
+
+    subgraph Frontend
+        UI --> TTS[Text-to-Speech Client]
+        UI --> STT[Speech-to-Text Client]
+        UI --> APIClient[REST API Client]
     end
-    
-    subgraph Backend [Flask Backend APIs]
-        APIGateway[API Gateway / App.py]
-        AuthService[Authentication Service]
-        TaskService[Task & Guidance Service]
-        CommService[Speech/Text Processing]
-        ProgressService[Progress Tracker]
-        NotifService[Notifications Engine]
+
+    subgraph Backend[Flask Backend]
+        API[API Gateway / app.py]
+        TaskSvc[Task Management Service]
+        CommSvc[Communication Service]
+        NotifySvc[Notification Service]
+        ReportSvc[Reporting Service]
     end
-    
-    subgraph Infra [Infrastructure Layer]
-        DB[(SQLite/PostgreSQL Database)]
-        Cache[(Redis Cache)]
-        TTS[Text-to-Speech Engine]
-        STT[Speech-to-Text Engine]
+
+    APIClient -->|HTTP| API
+    TTS -->|Send Text| API
+    STT -->|Send Audio| API
+
+    API --> TaskSvc
+    API --> CommSvc
+    API --> NotifySvc
+    API --> ReportSvc
+
+    subgraph Storage
+        DB[(SQLite / PostgreSQL)]
     end
-    
-    %% User and UI
-    User --> UI
-    Caregiver --> ReportsView
-    UI -->|HTTP| APIGateway
-    
-    %% Routing
-    APIGateway --> AuthService
-    APIGateway --> TaskService
-    APIGateway --> CommService
-    APIGateway --> ProgressService
-    APIGateway --> NotifService
-    
-    %% Modules Interaction
-    TaskService --> DB
-    ProgressService --> DB
-    CommService --> TTS
-    CommService --> STT
-    NotifService --> Cache
-    Cache --> NotifService
-    ProgressService --> Cache
 
+    TaskSvc --> DB
+    NotifySvc --> DB
+    ReportSvc --> DB
 
-sequenceDiagram
-    autonumber
-    participant U as User
-    participant UI as App UI
-    participant S as Server
-    participant T as Task Module
-    participant C as Comm Engine
-    participant D as Database
-    participant N as Notification Engine
+    subgraph AI
+        GoogleTTS[Text-to-Speech Engine]
+        GoogleSTT[Speech-to-Text Engine]
+    end
 
-    U->>UI: Opens App
-    UI->>S: Login Request
-    S->>D: Validate Credentials
-    D-->>S: OK
-    S-->>UI: Load Dashboard
-
-    U->>UI: Selects Daily Task
-    UI->>S: GET /task/{id}
-    S->>T: Fetch Task Steps
-    T->>D: Fetch Step Data
-    D-->>T: Steps
-    T-->>S: Steps with Media
-    S-->>UI: Display Step-by-Step Guide
-
-    U->>UI: Plays Audio Instruction
-    UI->>S: Request TTS
-    S->>C: Generate Audio
-    C-->>S: Audio File
-    S-->>UI: Play Audio
-
-    U->>UI: Marks Step Complete
-    UI->>S: POST /progress
-    S->>D: Update Progress
-    S->>N: Schedule Next Reminder
-    N-->>S: Reminder Confirmed
-    S-->>UI: “Task Completed”
+    CommSvc --> GoogleTTS
+    CommSvc --> GoogleSTT

@@ -64,40 +64,42 @@ View Logs, Update Tasks]
 flowchart TD
 
 A[User Interface  
-- Simple UI  
-- Visual Buttons  
-- Guided Prompts] --> B[Backend API  
-- Task Engine  
-- Reminder Manager  
-- Emotion Handler]
+Simple UI  
+Visual Buttons  
+Guided Prompts] --> B[Backend API  
+Task Engine  
+Reminder Manager  
+Emotion Handler]
 
 B --> C[AI Processing Layer  
-- Safety Filters  
-- Conversation Manager  
-- Adaptive Response Generator]
+Safety Filters  
+Conversation Manager  
+Adaptive Response Generator]
 
 C --> D[Database  
-- User Profile  
-- Task Lists  
-- Caretaker Notes  
-- Routines]
+User Profile  
+Task Lists  
+Caretaker Notes  
+Routines]
 
 D --> E[Caretaker Dashboard  
-- Insights  
-- Usage Reports  
-- Custom Task Creation]
+Insights  
+Usage Reports  
+Custom Task Creation]
 
 B --> F[Notification Scheduler  
-- Routine Alerts  
-- Task Reminders]
+Routine Alerts  
+Task Reminders]
 
-style A fill:#f9f9a8
-style B fill:#a8d8ff
-style C fill:#d5b8ff
-style D fill:#b6f5c9
-style E fill:#ffd1a8
-style F fill:#ffb8b8
+%% Styling
+style A fill:#fff6a9,stroke:#000,color:#000
+style B fill:#c9e5ff,stroke:#000,color:#000
+style C fill:#e6d4ff,stroke:#000,color:#000
+style D fill:#d2f7df,stroke:#000,color:#000
+style E fill:#ffe0c2,stroke:#000,color:#000
+style F fill:#ffd6d6,stroke:#000,color:#000
 ```
+
 
 
 

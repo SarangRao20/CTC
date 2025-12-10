@@ -109,109 +109,43 @@ This document explains how the system operates from both user and technical pers
 
 ---
 
-# 1. 🌟 High-Level User Workflow
-
-This workflow represents the daily interaction of an intellectually disabled user with the assistive system.
-
 ```mermaid
 flowchart TD
 
-    A[Start] --> B[User Login]
-    B --> C[Dashboard Loads]
+A[User Interface  
+- Simple UI  
+- Visual Buttons  
+- Guided Prompts] --> B[Backend API  
+- Task Engine  
+- Reminder Manager  
+- Emotion Handler]
 
-    C --> D[View Daily Tasks]
-    C --> E[See Reminders]
-    C --> F[Use Communication Aid]
+B --> C[AI Processing Layer  
+- Safety Filters  
+- Conversation Manager  
+- Adaptive Response Generator]
 
-    D --> G[Open Task]
-    G --> H[Step-by-Step Guidance]
-    H --> I[Task Completed]
+C --> D[Database  
+- User Profile  
+- Task Lists  
+- Caretaker Notes  
+- Routines]
 
-    F --> J[Speech to Text / Text to Speech]
+D --> E[Caretaker Dashboard  
+- Insights  
+- Usage Reports  
+- Custom Task Creation]
 
-    I --> K[Progress Updated]
-    K --> L[Caregiver View Updated]
+B --> F[Notification Scheduler  
+- Routine Alerts  
+- Task Reminders]
 
-    L --> M[End]
-
-
-flowchart LR
-
-    subgraph UserInteraction[User Interaction Layer]
-        A[Login] --> B[Dashboard]
-        B --> C[Task Selection]
-        B --> D[Communication Tool]
-        B --> E[Reminders Triggered]
-    end
-
-    subgraph TaskFlow[Task Guidance Module]
-        C --> F[Load Step-by-Step Instructions]
-        F --> G[Audio + Visual Cues]
-        G --> H[Mark Step Complete]
-        H --> I[Final Task Completion]
-    end
-
-    subgraph CommFlow[Communication Module]
-        D --> J[Speech to Text]
-        D --> K[Text to Speech]
-    end
-
-    subgraph NotificationFlow[Reminder & Alerts]
-        E --> L[Visual Reminder]
-        E --> M[Audio Reminder]
-    end
-
-    subgraph BackendFlow[Backend Processing]
-        I --> N[Update Database]
-        J --> N
-        K --> N
-        L --> N
-        M --> N
-    end
-
-    N --> O[Caregiver Dashboard]
-
-
-
-sequenceDiagram
-    participant U as User
-    participant FE as Frontend UI
-    participant BE as Backend API
-    participant DB as Database
-    participant AI as TTS/STT Engine
-
-    U->>FE: Login / Select Task
-    FE->>BE: GET /tasks
-    BE->>DB: Fetch tasks
-    DB-->>BE: Task list
-    BE-->>FE: Return task data
-
-    U->>FE: Open Task
-    FE->>BE: GET /task/{id}
-    BE->>DB: Fetch instructions
-    DB-->>BE: Return steps
-    BE-->>FE: Steps with images + audio paths
-
-    U->>FE: "Next Step" Click
-    FE->>FE: Play Audio + Show Visual
-
-    U->>FE: Task Completed
-    FE->>BE: POST /task/complete
-    BE->>DB: Update completion record
-
-    U->>FE: Speak Message
-    FE->>BE: POST /stt
-    BE->>AI: Convert Speech to Text
-    AI-->>BE: Text result
-    BE-->>FE: Show text to user
-
-    FE->>BE: POST /tts
-    BE->>AI: Generate Speech
-    AI-->>BE: Audio file
-    BE-->>FE: Play audio
-
-    BE->>DB: Push Updates
-    DB-->>BE: Success
-    BE-->>FE: Update Caregiver Dashboard
-
+%% Styling for dark background with white text
+style A fill:#1E1E1E,stroke:#FFFFFF,color:#FFFFFF
+style B fill:#2A2A2A,stroke:#FFFFFF,color:#FFFFFF
+style C fill:#3A3A3A,stroke:#FFFFFF,color:#FFFFFF
+style D fill:#2A3A2A,stroke:#FFFFFF,color:#FFFFFF
+style E fill:#3A2A2A,stroke:#FFFFFF,color:#FFFFFF
+style F fill:#3A1E1E,stroke:#FFFFFF,color:#FFFFFF
+```
 

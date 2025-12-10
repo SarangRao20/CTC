@@ -31,60 +31,74 @@ This system empowers intellectually disabled individuals by offering step-by-ste
 
 ## 🔄 Workflow
 
-1. **User Login / Caregiver Login**  
-2. **Dashboard** shows daily tasks and reminders  
-3. **Task Execution** with step-by-step audio & images  
-4. **Communication Assistance** converts speech to text and text to speech  
-5. **Progress Tracking** stored in the database  
-6. **Notifications** triggered based on schedule  
+```mermaid
+flowchart LR
 
----
+U[User Opens App] --> H[Home Screen  
+Large Buttons  
+Simple Icons] 
 
-## 🏗️ Software Architecture
+H --> R[Select Routine / Task]  
+H --> C[Start Guided Conversation]  
+H --> E[Press Help Button]
+
+R --> S1[Step-by-Step Task Guidance  
+1 small instruction at a time]
+
+C --> S2[AI Generates Safe,  
+Emotion-Friendly Response]
+
+E --> S3[Immediate Assistance  
+Short, calming prompts]
+
+S1 --> L[Logs Progress]  
+S2 --> L  
+S3 --> L
+
+L --> CD[Caretaker Dashboard  
+View Logs, Update Tasks]
+```
+
 
 ```mermaid
-graph TD
+flowchart TD
 
-    U[User / Caregiver] --> UI[Web / Mobile Frontend]
+A[User Interface  
+- Simple UI  
+- Visual Buttons  
+- Guided Prompts] --> B[Backend API  
+- Task Engine  
+- Reminder Manager  
+- Emotion Handler]
 
-    subgraph Frontend
-        UI --> TTS[Text-to-Speech Client]
-        UI --> STT[Speech-to-Text Client]
-        UI --> APIClient[REST API Client]
-    end
+B --> C[AI Processing Layer  
+- Safety Filters  
+- Conversation Manager  
+- Adaptive Response Generator]
 
-    subgraph Backend[Flask Backend]
-        API[API Gateway / app.py]
-        TaskSvc[Task Management Service]
-        CommSvc[Communication Service]
-        NotifySvc[Notification Service]
-        ReportSvc[Reporting Service]
-    end
+C --> D[Database  
+- User Profile  
+- Task Lists  
+- Caretaker Notes  
+- Routines]
 
-    APIClient -->|HTTP| API
-    TTS -->|Send Text| API
-    STT -->|Send Audio| API
+D --> E[Caretaker Dashboard  
+- Insights  
+- Usage Reports  
+- Custom Task Creation]
 
-    API --> TaskSvc
-    API --> CommSvc
-    API --> NotifySvc
-    API --> ReportSvc
+B --> F[Notification Scheduler  
+- Routine Alerts  
+- Task Reminders]
 
-    subgraph Storage
-        DB[(SQLite / PostgreSQL)]
-    end
+style A fill:#f9f9a8
+style B fill:#a8d8ff
+style C fill:#d5b8ff
+style D fill:#b6f5c9
+style E fill:#ffd1a8
+style F fill:#ffb8b8
+```
 
-    TaskSvc --> DB
-    NotifySvc --> DB
-    ReportSvc --> DB
-
-    subgraph AI
-        GoogleTTS[Text-to-Speech Engine]
-        GoogleSTT[Speech-to-Text Engine]
-    end
-
-    CommSvc --> GoogleTTS
-    CommSvc --> GoogleSTT
 
 
 # 🔄 System Workflow for Assistive System for Intellectually Disabled Individuals

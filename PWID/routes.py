@@ -357,8 +357,12 @@ def dashboard_summary():
         ).all()
 
         risk = calculate_risk(recent_logs)
-        level = risk["level"].lower()
-        risk_summary[level] += 1
+        level = risk.get("level")
+        if level is not None and level.lower() in risk_summary:
+            risk_summary[level.lower()] += 1
+        else:
+            # Optionally log or handle missing/unknown level
+            pass
 
     return {
         "total_pwid": total_pwid,

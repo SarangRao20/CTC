@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import Header from '@/components/Header';
 import PatientListRow from '@/components/PatientListRow';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import  { type Patient } from '@/data/mockData';
 import { Search, Users, X } from 'lucide-react';
+import api from "@/services/api";
 
 type AgeFilter = 'all' | 'children' | 'adolescents' | 'adults';
 type SupportFilter = 'all' | 'high' | 'medium' | 'low';

@@ -2,7 +2,7 @@ from flask import jsonify, request, Blueprint
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, PWID, Caretaker, Routinelog
+from models import db, PWID, Caretaker, Routinelog, Task, Event
 from flasgger import swag_from 
 from risk_engine import calculate_risk
 
@@ -14,13 +14,24 @@ def get_pwids():
     pwid_list = [{
         'id': pwid.id,
         'full_name': pwid.full_name,
+        'name': pwid.full_name, # Alias for frontend compatibility
         'age': pwid.age,
         'age_group': pwid.age_group,
         'support_level': pwid.support_level,
+        'supportLevel': f"{pwid.support_level}-support",
+        'functionalSupport': 'moderate' if pwid.support_level == 'medium' else ('extensive' if pwid.support_level == 'high' else 'minimal'),
         'ngo_name': pwid.ngo_name,
         'location_type': pwid.location_type,
         'baseline_mood': pwid.baseline_mood,
+        'room_number': pwid.room_number,
+        'roomNumber': pwid.room_number, # Alias for frontend
+        'primary_diagnosis': pwid.primary_diagnosis,
+        'primaryDiagnosis': pwid.primary_diagnosis, # Alias
+        'medications': pwid.medications_json or [],
+        'allergies': pwid.allergies_json or [],
         'is_active': pwid.is_active,
+        'status': 'stable', # Default status for frontend
+        'lastCheckDate': pwid.created_at.isoformat(),
         'created_at': pwid.created_at
     } for pwid in pwids]
     return jsonify(pwid_list)
@@ -38,6 +49,96 @@ def get_caretakers():
         'last_login_at': caretaker.last_login_at
     } for caretaker in caretakers]
     return jsonify(caretaker_list)
+
+@routes_bp.route('/caretaker/register', methods=['POST'])
+@swag_from({
+    "tags": ["Caretaker Auth"],
+    "summary": "Register a new caretaker",
+    "parameters": [
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "email": {"type": "string"},
+                    "password": {"type": "string"},
+                    "ngo_name": {"type": "string"},
+                    "role": {"type": "string"}
+                }
+            }
+        }
+    ],
+    "responses": {
+        201: {"description": "Caretaker registered successfully"},
+        400: {"description": "Email already exists or missing fields"}
+    }
+})
+def register_caretaker():
+    data = request.get_json()
+    if not all(k in data for k in ('name', 'email', 'password', 'ngo_name', 'role')):
+        return jsonify({'error': 'Missing fields'}), 400
+    
+    if Caretaker.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists'}), 400
+    
+    hashed_password = generate_password_hash(data['password'])
+    caretaker = Caretaker(
+        name=data['name'],
+        email=data['email'],
+        password_hash=hashed_password,
+        ngo_name=data['ngo_name'],
+        role=data['role'],
+        created_at=datetime.utcnow()
+    )
+    db.session.add(caretaker)
+    db.session.commit()
+    return jsonify({'message': 'Caretaker registered successfully'}), 201
+
+@routes_bp.route('/caretaker/login', methods=['POST'])
+@swag_from({
+    "tags": ["Caretaker Auth"],
+    "summary": "Login a caretaker",
+    "parameters": [
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "email": {"type": "string"},
+                    "password": {"type": "string"}
+                }
+            }
+        }
+    ],
+    "responses": {
+        200: {"description": "Login successful"},
+        401: {"description": "Invalid credentials"}
+    }
+})
+def login_caretaker():
+    data = request.get_json()
+    caretaker = Caretaker.query.filter_by(email=data.get('email')).first()
+    
+    if caretaker and check_password_hash(caretaker.password_hash, data.get('password')):
+        caretaker.last_login_at = datetime.utcnow()
+        db.session.commit()
+        return jsonify({
+            'message': 'Login successful',
+            'caretaker': {
+                'id': caretaker.id,
+                'name': caretaker.name,
+                'email': caretaker.email,
+                'role': caretaker.role,
+                'ngo_name': caretaker.ngo_name
+            }
+        }), 200
+    
+    return jsonify({'error': 'Invalid credentials'}), 401
 
 @routes_bp.route('/routinelogs', methods=['POST'])
 def create_routinelog():
@@ -68,13 +169,24 @@ def get_pwid(pwid_id):
     pwid_data = {
         'id': pwid.id,
         'full_name': pwid.full_name,
+        'name': pwid.full_name,
         'age': pwid.age,
         'age_group': pwid.age_group,
         'support_level': pwid.support_level,
+        'supportLevel': f"{pwid.support_level}-support",
+        'functionalSupport': 'moderate' if pwid.support_level == 'medium' else ('extensive' if pwid.support_level == 'high' else 'minimal'),
         'ngo_name': pwid.ngo_name,
         'location_type': pwid.location_type,
         'baseline_mood': pwid.baseline_mood,
+        'room_number': pwid.room_number,
+        'roomNumber': pwid.room_number,
+        'primary_diagnosis': pwid.primary_diagnosis,
+        'primaryDiagnosis': pwid.primary_diagnosis,
+        'medications': pwid.medications_json or [],
+        'allergies': pwid.allergies_json or [],
         'is_active': pwid.is_active,
+        'status': 'stable',
+        'lastCheckDate': pwid.created_at.isoformat(),
         'created_at': pwid.created_at
     }
     return jsonify(pwid_data)
@@ -236,50 +348,51 @@ def get_logs(pwid_id):
     return jsonify(log_list)
 
 @routes_bp.route('/pwid/list', methods=['GET'])
-@swag_from({
-    "tags": ["PWIDs"],
-    "summary": "Get list of all PWIDs",
-    "description": "Retrieve a list of all Persons With Intellectual Disabilities (PWIDs) in the system.",
-    "produces": ["application/json"],
-    "responses": {
-        200: {
-            "description": "List of PWIDs",
-            "schema": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "id": {"type": "integer"},
-                        "full_name": {"type": "string"},
-                        "age": {"type": "integer"},
-                        "age_group": {"type": "string"},
-                        "support_level": {"type": "string"},
-                        "ngo_name": {"type": "string"},
-                        "location_type": {"type": "string"},
-                        "baseline_mood": {"type": "string"},
-                        "is_active": {"type": "boolean"},
-                        "created_at": {"type": "string", "format": "date-time"}
-                    }
-                }
-            }
-        }
-    }
-})
 def list_pwids():
     pwids = PWID.query.all()
-    pwid_list = [{
-        'id': pwid.id,
-        'full_name': pwid.full_name,
-        'age': pwid.age,
-        'age_group': pwid.age_group,
-        'support_level': pwid.support_level,
-        'ngo_name': pwid.ngo_name,
-        'location_type': pwid.location_type,
-        'baseline_mood': pwid.baseline_mood,
-        'is_active': pwid.is_active,
-        'created_at': pwid.created_at
-    } for pwid in pwids]
+    pwid_list = []
+    
+    for pwid in pwids:
+        # Calculate status based on tasks
+        overdue_count = Task.query.filter_by(pwid_id=pwid.id, status='pending').count()
+        status = 'stable'
+        if overdue_count >= 1: status = 'attention'
+        if overdue_count >= 2: status = 'urgent'
+        
+        pwid_list.append({
+            'id': str(pwid.id),
+            'name': pwid.full_name,
+            'full_name': pwid.full_name,
+            'age': pwid.age,
+            'roomNumber': pwid.room_number,
+            'supportLevel': f"{pwid.support_level}-support",
+            'functionalSupport': pwid.support_level.capitalize(),
+            'lastCheckDate': pwid.created_at.isoformat(),
+            'status': status,
+            'primaryDiagnosis': pwid.primary_diagnosis,
+            'medications': pwid.medications_json or [],
+            'allergies': pwid.allergies_json or []
+        })
     return jsonify(pwid_list)
+
+@routes_bp.route('/dashboard/stats', methods=['GET'])
+def get_dashboard_stats_api():
+    total_patients = PWID.query.count()
+    
+    # Patients needing immediate attention (at least 1 pending task)
+    urgent_patients = db.session.query(Task.pwid_id).filter_by(status='pending').distinct().count()
+    
+    overdue_tasks = Task.query.filter_by(status='pending').count()
+    completed_today = Task.query.filter_by(status='completed').count() 
+    pending_tasks = Task.query.filter_by(status='pending').count()
+
+    return jsonify({
+        'totalPatients': total_patients,
+        'urgentAlerts': urgent_patients,
+        'overdueTasks': overdue_tasks,
+        'completedToday': completed_today,
+        'pendingTasks': pending_tasks
+    })
 
 @routes_bp.route("/risk/<int:pwid_id>", methods=["GET"])
 @swag_from({
@@ -372,3 +485,85 @@ def dashboard_summary():
             "incidents_count": len(incidents_today)
         }
     }
+
+@routes_bp.route('/events', methods=['GET'])
+def get_all_events():
+    events = Event.query.order_by(Event.timestamp.desc()).all()
+    event_list = [{
+        'id': event.id,
+        'patientId': event.pwid_id,
+        'type': event.type,
+        'title': event.title,
+        'description': event.description,
+        'timestamp': event.timestamp.isoformat(),
+        'caregiverId': event.caregiver_id,
+        'caregiverName': event.caregiver_name,
+        'voiceTranscription': event.voice_transcription,
+        'imageUrl': event.image_url,
+        'vitals': event.vitals_json
+    } for event in events]
+    return jsonify(event_list)
+
+@routes_bp.route('/events/<int:pwid_id>', methods=['GET'])
+def get_patient_events(pwid_id):
+    events = Event.query.filter_by(pwid_id=pwid_id).order_by(Event.timestamp.desc()).all()
+    event_list = [{
+        'id': event.id,
+        'patientId': event.pwid_id,
+        'type': event.type,
+        'title': event.title,
+        'description': event.description,
+        'timestamp': event.timestamp.isoformat(),
+        'caregiverId': event.caregiver_id,
+        'caregiverName': event.caregiver_name,
+        'voiceTranscription': event.voice_transcription,
+        'imageUrl': event.image_url,
+        'vitals': event.vitals_json
+    } for event in events]
+    return jsonify(event_list)
+
+@routes_bp.route('/events', methods=['POST'])
+def create_event():
+    data = request.get_json()
+    event = Event(
+        pwid_id=data['patientId'],
+        type=data['type'],
+        title=data['title'],
+        description=data.get('description', ''),
+        caregiver_id=data.get('caregiverId', 'c001'),
+        caregiver_name=data.get('caregiverName', 'Alex Morgan'),
+        voice_transcription=data.get('voiceTranscription'),
+        image_url=data.get('imageUrl'),
+        vitals_json=data.get('vitals'),
+        timestamp=datetime.utcnow()
+    )
+    db.session.add(event)
+    db.session.commit()
+    return jsonify({'message': 'Event created successfully', 'id': event.id}), 201
+
+@routes_bp.route('/tasks', methods=['GET'])
+def get_tasks():
+    tasks = Task.query.all()
+    task_list = [{
+        'id': task.id,
+        'patientId': task.pwid_id,
+        'title': task.title,
+        'description': task.description,
+        'category': task.category,
+        'priority': task.priority,
+        'dueTime': task.due_time,
+        'status': task.status,
+        'completedAt': task.completed_at.isoformat() if task.completed_at else None,
+        'completedBy': task.completed_by
+    } for task in tasks]
+    return jsonify(task_list)
+
+@routes_bp.route('/tasks/<int:task_id>/complete', methods=['POST'])
+def complete_task(task_id):
+    data = request.get_json()
+    task = Task.query.get_or_404(task_id)
+    task.status = 'completed'
+    task.completed_at = datetime.utcnow()
+    task.completed_by = data.get('completed_by', 'Unknown')
+    db.session.commit()
+    return jsonify({'message': 'Task marked as complete'})

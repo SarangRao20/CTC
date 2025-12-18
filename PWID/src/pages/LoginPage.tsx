@@ -5,25 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getDashboardStats } from '@/data/mockData';
-import { 
-  Users, 
-  AlertTriangle, 
-  Clock, 
-  CheckCircle2, 
-  ArrowRight,
-  Activity,
-  Heart,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  AlertCircle
-} from 'lucide-react';
+import { Search, Users, X, Activity, Heart, Mail, Lock, Eye, EyeOff, AlertCircle, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
+import api from '@/services/api';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, caregiver } = useApp();
-  const stats = getDashboardStats();
+  const { login, caregiver, stats } = useApp();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,15 +26,24 @@ const LoginPage = () => {
     }
     setError('');
     setIsLoading(true);
-    // Simulated auth delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    login();
-    navigate('/dashboard');
-    setIsLoading(false);
+
+    try {
+      const response = await api.post('/caretaker/login', { email, password });
+
+      if (response.status === 200) {
+        login(response.data.caretaker);
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
+      console.error('Login error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <main 
+    <main
       className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex flex-col relative overflow-hidden"
       role="main"
       aria-label="Login page"
@@ -85,17 +81,17 @@ const LoginPage = () => {
                 Welcome back, {caregiver.name}
               </h2>
               <p className="text-lg text-muted-foreground">
-                {caregiver.role} • {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
+                {caregiver.role} • {new Date().toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
                 })}
               </p>
             </div>
 
             {/* Summary Cards */}
-            <div 
+            <div
               className="grid grid-cols-2 md:grid-cols-4 gap-4"
               role="region"
               aria-label="Dashboard summary"

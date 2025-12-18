@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Heart, Mail, Lock, User, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import api from '@/services/api';
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const SignupPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [accept, setAccept] = useState(false);
-  const [errors, setErrors] = useState<{[k:string]: string}>({});
+  const [errors, setErrors] = useState<{ [k: string]: string }>({});
   const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated) {
@@ -35,7 +36,7 @@ const SignupPage: React.FC = () => {
   }
 
   const validate = () => {
-    const e: {[k:string]: string} = {};
+    const e: { [k: string]: string } = {};
     if (!name.trim()) e.name = 'Please enter your full name.';
     if (!email.trim()) e.email = 'Please enter your email.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email address.';
@@ -52,13 +53,33 @@ const SignupPage: React.FC = () => {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
-    await new Promise(r => setTimeout(r, 700));
-    toast({
-      title: 'Account created',
-      description: 'Your caregiver profile is ready. Please sign in.',
-    });
-    setSubmitting(false);
-    navigate('/');
+
+    try {
+      const response = await api.post('/caretaker/register', {
+        name,
+        email,
+        password,
+        role,
+        ngo_name: 'CareConnect NGO',
+      });
+
+      if (response.status === 201) {
+        toast({
+          title: 'Account created',
+          description: 'Your caregiver profile is ready. Please sign in.',
+        });
+        navigate('/');
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Registration failed',
+        description: err.response?.data?.error || 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+      console.error('Registration error:', err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

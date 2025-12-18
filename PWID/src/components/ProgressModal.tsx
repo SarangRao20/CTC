@@ -3,9 +3,9 @@ import { Patient, HistoryEvent } from '@/data/mockData';
 import { useApp } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  X, 
-  User, 
+import {
+  X,
+  User,
   Calendar,
   TrendingUp,
   Mic,
@@ -77,14 +77,14 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
   };
 
   return (
-    <div 
+    <div
       className="modal-overlay"
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div 
+      <div
         ref={modalRef}
         className="modal-content animate-scale-in"
         role="document"
@@ -124,22 +124,34 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
               <div className="w-10 h-10 rounded-lg bg-success-light mx-auto mb-2 flex items-center justify-center">
                 <Heart className="w-5 h-5 text-success" />
               </div>
-              <p className="text-2xl font-bold text-foreground">72</p>
+              <p className="text-2xl font-bold text-foreground">
+                {events.filter(e => e.type === 'vitals' && e.vitals?.heartRate).length > 0
+                  ? Math.round(events.filter(e => e.type === 'vitals' && e.vitals?.heartRate).reduce((acc, curr) => acc + (curr.vitals?.heartRate || 0), 0) / events.filter(e => e.type === 'vitals' && e.vitals?.heartRate).length)
+                  : '--'}
+              </p>
               <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
             </div>
             <div className="p-4 bg-secondary/50 rounded-xl text-center">
               <div className="w-10 h-10 rounded-lg bg-info-light mx-auto mb-2 flex items-center justify-center">
                 <Thermometer className="w-5 h-5 text-info" />
               </div>
-              <p className="text-2xl font-bold text-foreground">98.4°</p>
+              <p className="text-2xl font-bold text-foreground">
+                {events.filter(e => e.type === 'vitals' && e.vitals?.temperature).length > 0
+                  ? (events.filter(e => e.type === 'vitals' && e.vitals?.temperature).reduce((acc, curr) => acc + (curr.vitals?.temperature || 0), 0) / events.filter(e => e.type === 'vitals' && e.vitals?.temperature).length).toFixed(1)
+                  : '--'}°
+              </p>
               <p className="text-sm text-muted-foreground">Avg Temp</p>
             </div>
             <div className="p-4 bg-secondary/50 rounded-xl text-center">
               <div className="w-10 h-10 rounded-lg bg-primary-light mx-auto mb-2 flex items-center justify-center">
                 <Activity className="w-5 h-5 text-primary" />
               </div>
-              <p className="text-2xl font-bold text-foreground">120/80</p>
-              <p className="text-sm text-muted-foreground">Blood Pressure</p>
+              <p className="text-2xl font-bold text-foreground">
+                {events.filter(e => e.type === 'vitals' && e.vitals?.bloodPressure).length > 0
+                  ? events.filter(e => e.type === 'vitals' && e.vitals?.bloodPressure)[0].vitals?.bloodPressure
+                  : '--'}
+              </p>
+              <p className="text-sm text-muted-foreground">Latest BP</p>
             </div>
             <div className="p-4 bg-secondary/50 rounded-xl text-center">
               <div className="w-10 h-10 rounded-lg bg-accent-light mx-auto mb-2 flex items-center justify-center">
@@ -161,7 +173,7 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
               </p>
             ) : (
               events.map((event, index) => (
-                <div 
+                <div
                   key={event.id}
                   className="flex gap-4 animate-fade-in"
                   style={{ animationDelay: `${index * 50}ms` }}
@@ -187,13 +199,13 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
                     <p className="text-sm text-muted-foreground mb-2">
                       {event.caregiverName} • {format(new Date(event.timestamp), 'MMM d, yyyy h:mm a')}
                     </p>
-                    
+
                     {event.voiceTranscription && (
                       <div className="p-3 bg-info-light/30 rounded-lg text-sm">
                         <p className="text-foreground italic">"{event.voiceTranscription}"</p>
                       </div>
                     )}
-                    
+
                     {event.vitals && (
                       <div className="p-3 bg-success-light/30 rounded-lg text-sm">
                         <div className="flex flex-wrap gap-4">
@@ -215,8 +227,8 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
 
                     {event.imageUrl && (
                       <div className="mt-2">
-                        <img 
-                          src={event.imageUrl} 
+                        <img
+                          src={event.imageUrl}
                           alt={event.description}
                           className="rounded-lg max-w-[200px] border border-border"
                         />

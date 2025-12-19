@@ -4,7 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, PWID, Caretaker, Routinelog, Task, Event
 from flasgger import swag_from 
-from risk_engine import calculate_risk
+from risk_engine import calculate_single_risk, calculate_trend_risk
+from services.observe_engine import process_observation
 
 routes_bp = Blueprint('routes', __name__)
 
@@ -427,7 +428,7 @@ def get_risk(pwid_id):
         .all()
     )
 
-    risk = calculate_risk(logs)
+    risk = calculate_trend_risk(logs)
 
     return {
         "pwid_id": pwid_id,
@@ -469,7 +470,7 @@ def dashboard_summary():
             Routinelog.created_at >= seven_days_ago
         ).all()
 
-        risk = calculate_risk(recent_logs)
+        risk = calculate_trend_risk(recent_logs)
         level = risk.get("level")
         if level is not None and level.lower() in risk_summary:
             risk_summary[level.lower()] += 1
@@ -541,7 +542,7 @@ def create_event():
     db.session.commit()
     return jsonify({'message': 'Event created successfully', 'id': event.id}), 201
 
-@routes_bp.route('/tasks', methods=['GET'])
+@routes_bp.route('/tasks', methods=['GE T'])
 def get_tasks():
     tasks = Task.query.all()
     task_list = [{
@@ -567,3 +568,48 @@ def complete_task(task_id):
     task.completed_by = data.get('completed_by', 'Unknown')
     db.session.commit()
     return jsonify({'message': 'Task marked as complete'})
+
+@routes_bp.route("/observe", methods=["POST"])
+def observe_input():
+    data = request.get_json()
+
+    text = data.get("text")
+    pwid_id = data.get("pwid_id")
+    caregiver_id = data.get("caregiver_id", 1)
+
+    if not text or not pwid_id:
+        return jsonify({"error": "Missing text or pwid_id"}), 400
+
+    # 1️⃣ AI extraction
+    observation = process_observation(text)
+
+    # 2️⃣ Risk scoring (single day)
+    risk = calculate_single_risk({
+        "mood": observation["mood"],
+        "sleep": observation["sleep"],
+        "meals": observation["meals"],
+        "incident": observation["incident"]
+    })
+
+    # 3️⃣ Save as routine log
+    log = Routinelog(
+        pwid_id=pwid_id,
+        sleep_quality=observation["sleep"],
+        meals=observation["meals"],
+        medication_given="unknown",
+        mood=observation["mood"],
+        activity_done="unknown",
+        incident=observation["incident"],
+        notes=observation["notes"],
+        created_at=datetime.utcnow(),
+        created_by=caregiver_id
+    )
+
+    db.session.add(log)
+    db.session.commit()
+
+    return jsonify({
+        "structured_observation": observation,
+        "risk": risk,
+        "log_id": log.id
+    }), 201

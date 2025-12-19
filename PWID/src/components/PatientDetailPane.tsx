@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Patient, Task, HistoryEvent } from '@/data/mockData';
 import { useApp } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import VoiceInputButton from './VoiceInputButton';
 import ImageUploadButton from './ImageUploadButton';
-import { 
-  User, 
-  MapPin, 
-  Pill, 
-  AlertCircle, 
-  Clock, 
+import ObservationResultModal from './ObservationResultModal';
+import api from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
+import {
+  User,
+  MapPin,
+  Pill,
+  AlertCircle,
+  Clock,
   CheckCircle2,
   FileText,
   Mic,
@@ -33,8 +36,12 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
   onViewProgress,
 }) => {
   const { completeTask, addEvent } = useApp();
+  const { toast } = useToast();
+  const [observationResult, setObservationResult] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleVoiceNote = (transcription: string) => {
+  const handleVoiceNote = async (transcription: string) => {
+    // 1. Optimistic UI update (optional, keeping existing behavior for immediate feedback)
     addEvent({
       patientId: patient.id,
       type: 'voice',
@@ -42,6 +49,27 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
       description: transcription,
       voiceTranscription: transcription,
     });
+
+    // 2. Call Backend
+    try {
+      const response = await api.post('/observe', {
+        text: transcription,
+        pwid_id: patient.id, // Ensure pwid_id is correct format for backend
+        caregiver_id: 1 // Hardcoded for now as per Context limitation
+      });
+
+      if (response.status === 201) {
+        setObservationResult(response.data);
+        setIsModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Observation failed", error);
+      toast({
+        title: "Analysis Failed",
+        description: "Could not analyze the observation with AI.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleImageCapture = (file: File, preview: string) => {
@@ -68,27 +96,27 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
       {/* Header */}
       <div className="p-6 border-b border-border bg-secondary/30">
         <div className="flex items-start gap-4">
-          <div 
+          <div
             className={`
               w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0
-              ${patient.status === 'urgent' 
-                ? 'bg-urgent-light' 
-                : patient.status === 'needs-attention' 
-                  ? 'bg-warning-light' 
+              ${patient.status === 'urgent'
+                ? 'bg-urgent-light'
+                : patient.status === 'needs-attention'
+                  ? 'bg-warning-light'
                   : 'bg-primary-light'
               }
             `}
           >
-            <User 
+            <User
               className={`
                 w-8 h-8
-                ${patient.status === 'urgent' 
-                  ? 'text-urgent' 
-                  : patient.status === 'needs-attention' 
-                    ? 'text-warning' 
+                ${patient.status === 'urgent'
+                  ? 'text-urgent'
+                  : patient.status === 'needs-attention'
+                    ? 'text-warning'
                     : 'text-primary'
                 }
-              `} 
+              `}
             />
           </div>
           <div className="flex-1">
@@ -170,20 +198,19 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
               </p>
             ) : (
               pendingTasks.map(task => (
-                <div 
+                <div
                   key={task.id}
                   className={`
                     flex items-center gap-3 p-3 rounded-xl border
-                    ${task.status === 'overdue' 
-                      ? 'bg-urgent-light/30 border-urgent/20' 
+                    ${task.status === 'overdue'
+                      ? 'bg-urgent-light/30 border-urgent/20'
                       : 'bg-card border-border'
                     }
                   `}
                 >
-                  <Clock 
-                    className={`w-5 h-5 flex-shrink-0 ${
-                      task.status === 'overdue' ? 'text-urgent' : 'text-muted-foreground'
-                    }`} 
+                  <Clock
+                    className={`w-5 h-5 flex-shrink-0 ${task.status === 'overdue' ? 'text-urgent' : 'text-muted-foreground'
+                      }`}
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
@@ -242,6 +269,12 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
           </div>
         </section>
       </div>
+
+      <ObservationResultModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        data={observationResult}
+      />
     </div>
   );
 };

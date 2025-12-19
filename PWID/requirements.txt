@@ -1,3 +1,7 @@
 flasgger
 flask
 requests
+huggingface_hub
+python-dotenv
+spacy
+flask_cors

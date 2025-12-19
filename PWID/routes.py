@@ -10,6 +10,12 @@ from services.voice_service import transcribe_audio
 
 routes_bp = Blueprint('routes', __name__)
 
+@routes_bp.route('/ngos', methods=['GET'])
+def get_ngos():
+    # Only return NGOs that have at least one PWID patient
+    ngo_names = [n[0] for n in db.session.query(PWID.ngo_name).distinct().all() if n[0]]
+    return jsonify(sorted(list(set(ngo_names))))
+
 @routes_bp.route('/pwids', methods=['GET'])
 def get_pwids():
     pwids = PWID.query.all()
@@ -97,7 +103,18 @@ def register_caretaker():
     )
     db.session.add(caretaker)
     db.session.commit()
-    return jsonify({'message': 'Caretaker registered successfully'}), 201
+
+    # Return the registered caretaker details including NGO name
+    return jsonify({
+        'message': 'Caretaker registered successfully',
+        'caretaker': {
+            'id': caretaker.id,
+            'name': caretaker.name,
+            'email': caretaker.email,
+            'role': caretaker.role,
+            'ngo_name': caretaker.ngo_name
+        }
+    }), 201
 
 @routes_bp.route('/caretaker/login', methods=['POST'])
 @swag_from({

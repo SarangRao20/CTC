@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash
 
 from app import app
@@ -41,7 +41,7 @@ def seed_caretakers():
             password_hash=generate_password_hash(c["password"]),
             ngo_name=c["ngo_name"],
             role=c["role"],
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.session.add(caretaker)
 
@@ -82,7 +82,7 @@ def seed_pwid():
             medications_json=p[8],
             allergies_json=p[9],
             is_active=True,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         db.session.add(pwid)
 
@@ -133,7 +133,7 @@ def seed_events():
                 type='incident',
                 title='Fall reported near bed',
                 description='Minor slip; no visible injury. Monitoring for 24h.',
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 caregiver_id='c001',
                 caregiver_name='Alex Morgan'
             ),
@@ -142,7 +142,7 @@ def seed_events():
                 type='vitals',
                 title='Vitals recorded',
                 description='Routine vitals check',
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 caregiver_id='c001',
                 caregiver_name='Alex Morgan',
                 vitals_json={'temperature': 98.4, 'heartRate': 72, 'bloodPressure': '120/80', 'weight': 150}
@@ -152,7 +152,7 @@ def seed_events():
                 type='voice',
                 title='Voice note',
                 description='Daily behavior summary',
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 caregiver_id='c001',
                 caregiver_name='Alex Morgan',
                 voice_transcription='Patient was calm during morning activities.'

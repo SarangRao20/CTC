@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,15 @@ const SignupPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [ngoName, setNgoName] = useState('');
+  const [ngoOptions, setNgoOptions] = useState<string[]>([]);
+  const [customNgo, setCustomNgo] = useState('');
+
+  // Fetch NGO options on mount
+  useEffect(() => {
+    api.get('/ngos').then(res => {
+      setNgoOptions(res.data || []);
+    }).catch(() => setNgoOptions([]));
+  }, []);
   const [role, setRole] = useState('Caregiver');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,7 +45,14 @@ const SignupPage: React.FC = () => {
     if (!name.trim()) e.name = 'Please enter your full name.';
     if (!email.trim()) e.email = 'Please enter your email.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email address.';
-    if (!ngoName.trim()) e.ngoName = 'Please enter your NGO name.';
+    
+    // Validate NGO selection
+    if (!ngoName || ngoName === '') {
+      e.ngoName = 'Please select your NGO.';
+    } else if (ngoName === '__other__' && !customNgo.trim()) {
+      e.ngoName = 'Please enter your NGO name.';
+    }
+    
     if (!password) e.password = 'Create a password.';
     else if (password.length < 8) e.password = 'Minimum 8 characters.';
     if (!confirmPassword) e.confirmPassword = 'Confirm your password.';
@@ -46,32 +62,38 @@ const SignupPage: React.FC = () => {
     return Object.keys(e).length === 0;
   };
 
+  const { refreshData, login } = useApp();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
 
     try {
+      const finalNgoName = ngoName === '__other__' ? customNgo : ngoName;
+      
       const response = await api.post('/caretaker/register', {
         name,
         email,
         password,
         role,
-        ngo_name: ngoName,
+        ngo_name: finalNgoName,
       });
 
-      if (response.status === 201) {
+      if (response.status === 201 && response.data.caretaker) {
         toast({
           title: 'Account created',
           description: 'Your caregiver profile is ready.',
         });
 
-        // Auto-login if we want, or redirect to login. 
-        // For better UX, let's redirect to login for now to ensure they know their credentials.
-        // Actually, let's look at the login endpoint response structure if we were to auto-login.
-        // But /caretaker/register doesn't return the full user object usually.
-        // Safe bet: Redirect to Login.
-        navigate('/');
+        // Auto-login the user with the returned caretaker data
+        login(response.data.caretaker);
+        
+        // Refresh data to fetch PWIDs for this NGO
+        await refreshData();
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
       }
     } catch (err: any) {
       toast({
@@ -182,14 +204,29 @@ const SignupPage: React.FC = () => {
                   <Label htmlFor="ngoName" className="text-foreground font-medium">NGO Name</Label>
                   <div className="relative">
                     <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      id="ngoName"
-                      placeholder="Enter your NGO Name"
-                      value={ngoName}
-                      onChange={(e) => setNgoName(e.target.value)}
-                      className="pl-10 h-12 text-base"
-                    />
+                    <Select value={ngoName} onValueChange={setNgoName}>
+                      <SelectTrigger className="pl-10 h-12 text-base">
+                        <SelectValue placeholder="Select your NGO" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ngoOptions.map((ngo) => (
+                          <SelectItem key={ngo} value={ngo}>{ngo}</SelectItem>
+                        ))}
+                        <SelectItem value="__other__">Other (not listed)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                  {ngoName === '__other__' && (
+                    <div className="mt-2">
+                      <Input
+                        id="ngoNameOther"
+                        placeholder="Type your NGO Name"
+                        value={customNgo}
+                        onChange={(e) => setCustomNgo(e.target.value)}
+                        className="h-12 text-base"
+                      />
+                    </div>
+                  )}
                   {errors.ngoName && <p className="text-xs text-urgent mt-1">{errors.ngoName}</p>}
                 </div>
 

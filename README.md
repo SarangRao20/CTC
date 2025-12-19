@@ -5,6 +5,7 @@ A fully software-based assistive platform designed to help intellectually disabl
 ---
 
 ## 📌 Executive Summary
+
 This system empowers intellectually disabled individuals by offering step-by-step task guidance, daily schedules, communication tools, and caregiver dashboards. The focus is on simplicity, accessibility, and independence, without relying on any hardware. It reduces caregiver burden and enables structured daily living.
 
 ---
@@ -59,7 +60,6 @@ L --> CD[Caretaker Dashboard
 View Logs, Update Tasks]
 ```
 
-
 ```mermaid
 flowchart TD
 
@@ -99,9 +99,6 @@ style D fill:#d2f7df,stroke:#000,color:#000
 style E fill:#ffe0c2,stroke:#000,color:#000
 style F fill:#ffd6d6,stroke:#000,color:#000
 ```
-
-
-
 
 # 🔄 System Workflow for Assistive System for Intellectually Disabled Individuals
 
@@ -149,11 +146,10 @@ style E fill:#3A2A2A,stroke:#FFFFFF,color:#FFFFFF
 style F fill:#3A1E1E,stroke:#FFFFFF,color:#FFFFFF
 ```
 
-
-
 ### SaharaAI — Detailed Workflow
 
 **Legend:**  
+
 - PWID/User = person with intellectual disability using the guided UI.  
 - Caregiver = teacher/hostel staff entering quick logs, tags, reports.  
 - Doctor = clinician reviewing flagged cases & reports.  

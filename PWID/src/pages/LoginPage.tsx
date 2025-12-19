@@ -78,10 +78,10 @@ const LoginPage = () => {
           <div className="space-y-8">
             <div className="text-left lg:text-left">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                Welcome back, {caregiver.name}
+                Welcome back, {caregiver?.name || 'Caregiver'}
               </h2>
               <p className="text-lg text-muted-foreground">
-                {caregiver.role} • {new Date().toLocaleDateString('en-US', {
+                {caregiver?.role || 'Guest'} • {new Date().toLocaleDateString('en-US', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',

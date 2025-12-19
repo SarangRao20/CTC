@@ -41,12 +41,13 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
-    isAuthenticated: true,
+    isAuthenticated: false,
     patients: [],
     tasks: [],
     events: [],
     selectedPatientId: null,
-    caregiver: currentCaregiver as Caretaker,
+    // @ts-ignore - Initial empty state
+    caregiver: null,
     stats: {
       totalPatients: 0,
       urgentAlerts: 0,

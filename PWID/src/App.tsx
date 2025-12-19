@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import HistoryPage from "./pages/HistoryPage";
 import RoutineChecksPage from "./pages/RoutineChecksPage";
 import ReportPage from "./pages/ReportPage";
+import PatientDashboard from "./pages/PatientDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const AppRoutes = () => {
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/routine" element={<RoutineChecksPage />} />
         <Route path="/report/:patientId" element={<ReportPage />} />
+        <Route path="/patient/:id" element={<PatientDashboard />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

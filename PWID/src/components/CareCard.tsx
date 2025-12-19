@@ -149,7 +149,7 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                     {/* Header - Clickable for Progress */}
                     <div
                         className="flex items-start justify-between mb-4 cursor-pointer"
-                        onClick={onViewProgress}
+                        onClick={() => navigate(`/patient/${patient.id}`)}
                     >
                         <div className="flex items-center gap-4">
                             <div className="relative">

@@ -63,8 +63,14 @@ const SignupPage: React.FC = () => {
       if (response.status === 201) {
         toast({
           title: 'Account created',
-          description: 'Your caregiver profile is ready. Please sign in.',
+          description: 'Your caregiver profile is ready.',
         });
+
+        // Auto-login if we want, or redirect to login. 
+        // For better UX, let's redirect to login for now to ensure they know their credentials.
+        // Actually, let's look at the login endpoint response structure if we were to auto-login.
+        // But /caretaker/register doesn't return the full user object usually.
+        // Safe bet: Redirect to Login.
         navigate('/');
       }
     } catch (err: any) {

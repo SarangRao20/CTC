@@ -3,6 +3,6 @@ flask
 requests
 huggingface_hub
 python-dotenv
-spacy
-vosk
+SpeechRecognition
+pydub
 vosk

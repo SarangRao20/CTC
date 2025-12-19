@@ -1,68 +1,85 @@
 import os
 import io
+import speech_recognition as sr
+from vosk import Model, KaldiRecognizer
 import json
 import wave
-from vosk import Model, KaldiRecognizer
 
 # Configuration
-MODEL_PATH = "model-hi"  # Assuming we look for this folder in root or PWID/
+MODEL_PATH = "model-hi"
 SAMPLE_RATE = 16000
 
-# Global variable for lazy loading
+# Global variable for lazy loading Vosk
 vosk_model = None
 
-def get_model():
+def get_vosk_model():
     global vosk_model
     if vosk_model:
         return vosk_model
     
-    if not os.path.exists(MODEL_PATH):
-        # Fallback to check relative to this file if needed, or cwd
-        if os.path.exists(os.path.join(os.getcwd(), MODEL_PATH)):
-             vosk_model = Model(os.path.join(os.getcwd(), MODEL_PATH))
-             return vosk_model
-             
-        raise FileNotFoundError(f"Vosk model not found at '{MODEL_PATH}'. Please ensure the model directory exists.")
-    
-    print("Loading Vosk Model...")
-    vosk_model = Model(MODEL_PATH)
-    return vosk_model
+    if os.path.exists(MODEL_PATH):
+        print("Loading Vosk Model (Fallback)...")
+        vosk_model = Model(MODEL_PATH)
+        return vosk_model
+    return None
 
-def transcribe_audio(audio_data):
-    """
-    Transcribes audio bytes to text using Vosk.
-    Expects audio_data to be a WAV file (bytes) with 16kHz Mono format.
-    """
-    try:
-        model = get_model()
-    except FileNotFoundError as e:
-        return {"error": str(e)}
+def transcribe_with_vosk(audio_data):
+    """Fallback offline transcription using Vosk (Hindi only)"""
+    model = get_vosk_model()
+    if not model:
+        return {"error": "Vosk model not found and online transcription failed."}
 
     rec = KaldiRecognizer(model, SAMPLE_RATE)
-
-    # Read WAV headers to verify format
     try:
         wf = wave.open(io.BytesIO(audio_data), "rb")
-    except wave.Error as e:
-        return {"error": f"Invalid WAV file: {e}"}
+    except Exception:
+        return {"error": "Invalid WAV data for Vosk"}
 
     if wf.getnchannels() != 1 or wf.getframerate() != SAMPLE_RATE:
-        return {
-            "error": f"Audio must be {SAMPLE_RATE}Hz Mono WAV. Got {wf.getframerate()}Hz {wf.getnchannels()}ch."
-        }
+        return {"error": "Audio format mismatch for Vosk (Need 16kHz Mono)"}
 
-    result_text = ""
-    
     while True:
         data = wf.readframes(4000)
         if len(data) == 0:
             break
-        if rec.AcceptWaveform(data):
-            # Vosk returns JSON strings for intermediate results (we ignore them here)
-            pass
+        rec.AcceptWaveform(data)
     
-    # Get final result
     final_res = json.loads(rec.FinalResult())
-    result_text = final_res.get("text", "")
+    return {"text": final_res.get("text", "")}
+
+def transcribe_audio(audio_data):
+    """
+    Intelligently switches between English and Hindi using Google Speech Recognition (Online).
+    Falls back to Vosk (Offline - Hindi) if internet fails.
+    """
+    recognizer = sr.Recognizer()
     
-    return {"text": result_text}
+    # Convert bytes to AudioFile compatible format
+    try:
+        # We need a file-like object
+        audio_file = io.BytesIO(audio_data)
+        with sr.AudioFile(audio_file) as source:
+            audio = recognizer.record(source)
+    except Exception as e:
+        return {"error": f"Failed to process audio file: {str(e)}"}
+
+    # Strategy 1: Try English (IN) - handles Indian English well
+    try:
+        text = recognizer.recognize_google(audio, language="en-IN")
+        return {"text": text, "language": "en-IN"}
+    except sr.UnknownValueError:
+        # Audio not clear in English, try Hindi
+        print("English recognition failed, trying Hindi...")
+    except sr.RequestError:
+        # Internet issue, fallback to Vosk
+        print("Google API unreachable, switching to offline Vosk...")
+        return transcribe_with_vosk(audio_data)
+
+    # Strategy 2: Try Hindi
+    try:
+        text = recognizer.recognize_google(audio, language="hi-IN")
+        return {"text": text, "language": "hi-IN"}
+    except sr.UnknownValueError:
+        return {"text": "", "error": "Could not understand audio in English or Hindi"}
+    except sr.RequestError:
+        return transcribe_with_vosk(audio_data)

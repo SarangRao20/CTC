@@ -1,0 +1,8 @@
+flasgger
+flask
+requests
+huggingface_hub
+python-dotenv
+SpeechRecognition
+pydub
+vosk

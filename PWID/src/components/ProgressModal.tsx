@@ -246,7 +246,7 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button variant="default" className="gap-2">
+          <Button variant="default" className="gap-2" onClick={() => window.open(`/report/${patient.id}`, '_blank')}>
             <Download className="w-4 h-4" />
             Export Report
           </Button>

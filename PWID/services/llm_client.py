@@ -35,7 +35,7 @@ A short caregiver-written observation describing daily behaviour, routine, or he
 Rules (STRICT)
 - Never diagnose or label medical conditions
 - Never escalate risk unnecessarily
-- If information is missing or ambiguous, mark as "Unknown"
+- If information is missing, mark as "Unknown"
 - If interpretation is uncertain, set confidence to "Low"
 - Use simple, neutral language
 

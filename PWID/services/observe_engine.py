@@ -18,9 +18,12 @@ def process_observation(text: str):
             "mood": base.get("mood", "Unknown"),
             "sleep": base.get("sleep", "Unknown"),
             "meals": base.get("meals", "Unknown"),
+            "medication": base.get("medication", "Unknown"),
+            "activity": base.get("activity", "Unknown"),
             "incident": base.get("incident", "Unknown"),
             "notes": text.strip(),
             "confidence": confidence,
+            "source": "rule-based",
             "explanation": "Observation extracted using rule-based analysis."
         }
 
@@ -32,8 +35,11 @@ def process_observation(text: str):
         "mood": llm_output.get("mood", "Unknown"),
         "sleep": llm_output.get("sleep", "Unknown"),
         "meals": llm_output.get("meals", "Unknown"),
+        "medication": llm_output.get("medication", "Unknown"),
+        "activity": llm_output.get("activity", "Unknown"),
         "incident": llm_output.get("incident", "Unknown"),
         "notes": llm_output.get("notes", text.strip()),
         "confidence": "Low",
+        "source": "llm-fallback",
         "explanation": "Observation inferred with AI assistance due to unclear input."
     }

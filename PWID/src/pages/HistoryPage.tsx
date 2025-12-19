@@ -1,22 +1,36 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import Header from '@/components/Header';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Mic, 
-  Camera, 
-  FileText, 
-  Activity, 
+import { Button } from '@/components/ui/button';
+import {
+  Mic,
+  Camera,
+  FileText,
+  Activity,
   Pill,
   User,
   Calendar,
-  Filter
+  Filter,
+  Download
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { HistoryEvent } from '@/data/mockData';
 
+
 const HistoryPage = () => {
   const { events, patients } = useApp();
+  const [searchParams] = useSearchParams();
+  const patientIdFilter = searchParams.get('patientId');
+
+  const filteredEvents = useMemo(() => {
+    const list = !patientIdFilter
+      ? events
+      : events.filter(e => e.patientId === patientIdFilter);
+
+    // Sort by newest first
+    return list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [events, patientIdFilter]);
 
   const getPatientName = (patientId: string) => {
     return patients.find(p => p.id === patientId)?.name || 'Unknown Patient';
@@ -43,32 +57,70 @@ const HistoryPage = () => {
     }
   };
 
+  const handleExport = () => {
+    if (filteredEvents.length === 0) return;
+
+    // CSV Header
+    const headers = ['Date', 'Time', 'Patient', 'Type', 'Title', 'Description', 'Caregiver'];
+    const rows = filteredEvents.map(e => {
+      const d = new Date(e.timestamp);
+      return [
+        d.toLocaleDateString(),
+        d.toLocaleTimeString(),
+        `"${getPatientName(e.patientId)}"`,
+        e.type,
+        `"${e.title}"`,
+        `"${e.description.replace(/"/g, '""')}"`, // Escape quotes
+        `"${e.caregiverName}"`
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `history_export_${patientIdFilter || 'all'}_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
+
       <main className="max-w-4xl mx-auto p-4 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">History</h1>
-            <p className="text-muted-foreground">All recorded events across patients</p>
+            <h1 className="text-2xl font-bold text-foreground">
+              {patientIdFilter ? `History: ${getPatientName(patientIdFilter)}` : 'Full History'}
+            </h1>
+            <p className="text-muted-foreground">
+              {patientIdFilter ? 'Events recorded for this resident' : 'All recorded events across patients'}
+            </p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4" />
-            {events.length} events
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="w-4 h-4" />
+              {filteredEvents.length} events
+            </div>
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={filteredEvents.length === 0} className="gap-2">
+              <Download className="w-4 h-4" />
+              Export Report
+            </Button>
           </div>
         </div>
 
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
-          {events.length === 0 ? (
+          {filteredEvents.length === 0 ? (
             <div className="text-center py-16">
               <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <p className="text-muted-foreground">No history events recorded yet.</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {events.map((event, index) => (
-                <article 
+              {filteredEvents.map((event, index) => (
+                <article
                   key={event.id}
                   className="p-4 md:p-6 hover:bg-secondary/30 transition-colors animate-fade-in"
                   style={{ animationDelay: `${index * 30}ms` }}
@@ -99,7 +151,7 @@ const HistoryPage = () => {
                           </p>
                         </div>
                       </div>
-                      
+
                       {event.description && (
                         <p className="text-sm text-muted-foreground">{event.description}</p>
                       )}
@@ -107,6 +159,12 @@ const HistoryPage = () => {
                       {event.voiceTranscription && (
                         <div className="mt-2 p-3 bg-info-light/30 rounded-lg">
                           <p className="text-sm italic text-foreground">"{event.voiceTranscription}"</p>
+                        </div>
+                      )}
+
+                      {event.imageUrl && (
+                        <div className="mt-2">
+                          <img src={event.imageUrl} alt="Event related" className="max-w-xs rounded-lg border border-border" />
                         </div>
                       )}
 

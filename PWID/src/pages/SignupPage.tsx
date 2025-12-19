@@ -22,6 +22,7 @@ const SignupPage: React.FC = () => {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [ngoName, setNgoName] = useState('');
   const [role, setRole] = useState('Caregiver');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,16 +31,12 @@ const SignupPage: React.FC = () => {
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
   const [submitting, setSubmitting] = useState(false);
 
-  if (isAuthenticated) {
-    // If already logged in, redirect to dashboard
-    navigate('/dashboard');
-  }
-
   const validate = () => {
     const e: { [k: string]: string } = {};
     if (!name.trim()) e.name = 'Please enter your full name.';
     if (!email.trim()) e.email = 'Please enter your email.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email address.';
+    if (!ngoName.trim()) e.ngoName = 'Please enter your NGO name.';
     if (!password) e.password = 'Create a password.';
     else if (password.length < 8) e.password = 'Minimum 8 characters.';
     if (!confirmPassword) e.confirmPassword = 'Confirm your password.';
@@ -60,7 +57,7 @@ const SignupPage: React.FC = () => {
         email,
         password,
         role,
-        ngo_name: 'CareConnect NGO',
+        ngo_name: ngoName,
       });
 
       if (response.status === 201) {
@@ -173,6 +170,21 @@ const SignupPage: React.FC = () => {
                       <SelectItem value="Coordinator">Coordinator</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ngoName" className="text-foreground font-medium">NGO Name</Label>
+                  <div className="relative">
+                    <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="ngoName"
+                      placeholder="Enter your NGO Name"
+                      value={ngoName}
+                      onChange={(e) => setNgoName(e.target.value)}
+                      className="pl-10 h-12 text-base"
+                    />
+                  </div>
+                  {errors.ngoName && <p className="text-xs text-urgent mt-1">{errors.ngoName}</p>}
                 </div>
 
                 <div className="space-y-2">

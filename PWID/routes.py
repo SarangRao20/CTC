@@ -6,6 +6,7 @@ from models import db, PWID, Caretaker, Routinelog, Task, Event
 from flasgger import swag_from 
 from risk_engine import calculate_single_risk, calculate_trend_risk
 from services.observe_engine import process_observation
+from services.voice_service import transcribe_audio
 
 routes_bp = Blueprint('routes', __name__)
 
@@ -350,7 +351,14 @@ def get_logs(pwid_id):
 
 @routes_bp.route('/pwid/list', methods=['GET'])
 def list_pwids():
-    pwids = PWID.query.all()
+    ngo_filter = request.args.get('ngo')
+    if ngo_filter:
+        pwids = PWID.query.filter_by(ngo_name=ngo_filter, is_active=True).all()
+    else:
+        # If no filter, technically return [] or all? 
+        # For security, better to return empty if no NGO context, but to keep existing functionality for dev:
+        pwids = PWID.query.all()
+        
     pwid_list = []
     
     for pwid in pwids:
@@ -378,14 +386,35 @@ def list_pwids():
 
 @routes_bp.route('/dashboard/stats', methods=['GET'])
 def get_dashboard_stats_api():
-    total_patients = PWID.query.count()
+    ngo_filter = request.args.get('ngo')
+    
+    # Base PWID query
+    pwid_query = PWID.query
+    if ngo_filter:
+        pwid_query = pwid_query.filter_by(ngo_name=ngo_filter)
+    total_patients = pwid_query.count()
+    
+    # Get IDs for filtering tasks
+    pwid_ids = [p.id for p in pwid_query.all()]
+    
+    if not pwid_ids:
+        return jsonify({
+        'totalPatients': 0,
+        'urgentAlerts': 0,
+        'overdueTasks': 0,
+        'completedToday': 0,
+        'pendingTasks': 0
+    })
+
+    # Filter tasks by these PWIDs
+    # SQLAlchemy: Task.pwid_id in pwid_ids
     
     # Patients needing immediate attention (at least 1 pending task)
-    urgent_patients = db.session.query(Task.pwid_id).filter_by(status='pending').distinct().count()
+    urgent_patients = db.session.query(Task.pwid_id).filter(Task.status=='pending', Task.pwid_id.in_(pwid_ids)).distinct().count()
     
-    overdue_tasks = Task.query.filter_by(status='pending').count()
-    completed_today = Task.query.filter_by(status='completed').count() 
-    pending_tasks = Task.query.filter_by(status='pending').count()
+    overdue_tasks = Task.query.filter(Task.status=='pending', Task.pwid_id.in_(pwid_ids)).count() # Logic: Overdue usually implies pending + time passed, simplifying here as per existing logic
+    completed_today = Task.query.filter(Task.status=='completed', Task.pwid_id.in_(pwid_ids)).count() 
+    pending_tasks = Task.query.filter(Task.status=='pending', Task.pwid_id.in_(pwid_ids)).count()
 
     return jsonify({
         'totalPatients': total_patients,
@@ -447,7 +476,12 @@ def get_risk(pwid_id):
     }
 })
 def dashboard_summary():
-    pwids = PWID.query.filter_by(is_active=True).all()
+    ngo_filter = request.args.get('ngo')
+    query = PWID.query.filter_by(is_active=True)
+    if ngo_filter:
+        query = query.filter_by(ngo_name=ngo_filter)
+        
+    pwids = query.all()
     total_pwid = len(pwids)
     now = datetime.utcnow()
     today_start = datetime(now.year, now.month, now.day)
@@ -542,7 +576,7 @@ def create_event():
     db.session.commit()
     return jsonify({'message': 'Event created successfully', 'id': event.id}), 201
 
-@routes_bp.route('/tasks', methods=['GE T'])
+@routes_bp.route('/tasks', methods=['GET'])
 def get_tasks():
     tasks = Task.query.all()
     task_list = [{
@@ -569,6 +603,23 @@ def complete_task(task_id):
     db.session.commit()
     return jsonify({'message': 'Task marked as complete'})
 
+@routes_bp.route('/logs/<int:log_id>', methods=['PATCH'])
+def update_log(log_id):
+    log = Routinelog.query.get_or_404(log_id)
+    data = request.get_json()
+    
+    if 'mood' in data: log.mood = data['mood']
+    if 'sleep' in data: log.sleep_quality = data['sleep']
+    if 'sleep_quality' in data: log.sleep_quality = data['sleep_quality']
+    if 'meals' in data: log.meals = data['meals']
+    if 'medication_given' in data: log.medication_given = data['medication_given']
+    if 'activity_done' in data: log.activity_done = data['activity_done']
+    if 'incident' in data: log.incident = data['incident']
+    if 'notes' in data: log.notes = data['notes']
+    
+    db.session.commit()
+    return jsonify({'message': 'Log updated successfully', 'id': log.id}), 200
+
 @routes_bp.route("/observe", methods=["POST"])
 def observe_input():
     data = request.get_json()
@@ -585,22 +636,22 @@ def observe_input():
 
     # 2️⃣ Risk scoring (single day)
     risk = calculate_single_risk({
-        "mood": observation["mood"],
-        "sleep": observation["sleep"],
-        "meals": observation["meals"],
-        "incident": observation["incident"]
+        "mood": observation.get("mood", "Unknown"),
+        "sleep": observation.get("sleep", "Unknown"),
+        "meals": observation.get("meals", "Unknown"),
+        "incident": observation.get("incident", "Unknown")
     })
 
     # 3️⃣ Save as routine log
     log = Routinelog(
         pwid_id=pwid_id,
-        sleep_quality=observation["sleep"],
-        meals=observation["meals"],
-        medication_given="unknown",
-        mood=observation["mood"],
-        activity_done="unknown",
-        incident=observation["incident"],
-        notes=observation["notes"],
+        sleep_quality=observation.get("sleep", "Unknown"),
+        meals=observation.get("meals", "Unknown"),
+        medication_given=observation.get("medication", "Unknown"), # Now dynamic
+        mood=observation.get("mood", "Unknown"),
+        activity_done=observation.get("activity", "Unknown"), # Now dynamic
+        incident=observation.get("incident", "Unknown"),
+        notes=observation.get("notes", text),
         created_at=datetime.utcnow(),
         created_by=caregiver_id
     )
@@ -613,3 +664,21 @@ def observe_input():
         "risk": risk,
         "log_id": log.id
     }), 201
+
+@routes_bp.route("/api/voice/transcribe", methods=["POST"])
+def voice_transcribe():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    if file:
+        audio_data = file.read()
+        result = transcribe_audio(audio_data)
+        
+        if "error" in result:
+             return jsonify(result), 500
+             
+        return jsonify(result)

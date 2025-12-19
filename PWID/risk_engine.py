@@ -32,12 +32,25 @@ def score_incident(incident):
         "Unknown": 2
     }.get(incident, 2)
 
-def calculate_risk(observation):
+def calculate_single_risk(observation):
+    # Handle both dict and object (SQLAlchemy model) input
+    if isinstance(observation, dict):
+        mood = observation.get("mood", "Unknown")
+        sleep = observation.get("sleep", "Unknown")
+        meals = observation.get("meals", "Unknown")
+        incident = observation.get("incident", "Unknown")
+    else:
+        # Assuming it's a Routinelog object
+        mood = observation.mood
+        sleep = observation.sleep_quality
+        meals = observation.meals
+        incident = observation.incident
+
     score = (
-        score_mood(observation["mood"]) +
-        score_sleep(observation["sleep"]) +
-        score_meals(observation["meals"]) +
-        score_incident(observation["incident"])
+        score_mood(mood) +
+        score_sleep(sleep) +
+        score_meals(meals) +
+        score_incident(incident)
     )
 
     if score >= 8:
@@ -48,19 +61,70 @@ def calculate_risk(observation):
         level = "Low"
 
     reason = []
-    if observation["mood"] not in ["Calm", "Happy"]:
-        reason.append(f"{observation['mood'].lower()} mood")
-    if observation["sleep"] in ["Poor", "Disturbed"]:
-        reason.append(f"{observation['sleep'].lower()} sleep")
-    if observation["meals"] in ["Skipped", "Reduced"]:
-        reason.append(f"{observation['meals'].lower()} meals")
-    if observation["incident"] != "None":
+    if mood not in ["Calm", "Happy"]:
+        reason.append(f"{mood.lower()} mood")
+    if sleep in ["Poor", "Disturbed"]:
+        reason.append(f"{sleep.lower()} sleep")
+    if meals in ["Skipped", "Reduced"]:
+        reason.append(f"{meals.lower()} meals")
+    if incident != "None" and incident != "no":
         reason.append("incident reported")
 
-    explanation = ", ".join(reason).capitalize() + " observed."
+    explanation = ", ".join(reason).capitalize() + " observed." if reason else "Stable condition."
 
     return {
         "risk_level": level,
         "risk_score": score,
         "reason": explanation
+    }
+
+def calculate_trend_risk(logs):
+    """
+    Analyzes a list of routine logs (e.g., last 7 days) to determine trend-based risk.
+    """
+    if not logs:
+        return {
+            "risk_level": "Low",
+            "risk_score": 0,
+            "reason": "No recent logs to analyze."
+        }
+
+    high_risk_count = 0
+    medium_risk_count = 0
+    total_score = 0
+    
+    recent_reasons = []
+
+    for log in logs:
+        # Calculate risk for each log individually
+        result = calculate_single_risk(log)
+        score = result["risk_score"]
+        level = result["risk_level"]
+        
+        total_score += score
+        
+        if level == "High":
+            high_risk_count += 1
+            recent_reasons.append(f"High risk on {log.created_at.strftime('%Y-%m-%d')}")
+        elif level == "Medium":
+            medium_risk_count += 1
+
+    # Trend logic
+    trend_level = "Low"
+    trend_reason = "Stable trend over recent logs."
+
+    if high_risk_count >= 2:
+        trend_level = "High"
+        trend_reason = f"Multiple high-risk days ({high_risk_count}) detected recently."
+    elif high_risk_count == 1 or medium_risk_count >= 3:
+        trend_level = "Medium"
+        trend_reason = "Signs of deterioration detected in recent logs."
+    
+    avg_score = total_score / len(logs)
+
+    return {
+        "risk_level": trend_level,
+        "risk_score": round(avg_score, 2),
+        "reason": trend_reason,
+        "details": recent_reasons
     }

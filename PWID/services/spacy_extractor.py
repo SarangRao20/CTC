@@ -1,122 +1,113 @@
 import spacy
 
+# Load spaCy model
 nlp = spacy.load("en_core_web_sm")
 
-MOOD_MAP = {
-    "anxious": "Anxious",
-    "restless": "Anxious",
-    "nervous": "Anxious",
-    "scared": "Anxious",
-    "angry": "Irritable",
-    "irritated": "Irritable",
-    "annoyed": "Irritable",
-    "aggressive": "Aggressive",
-    "hitting": "Aggressive",
-    "shouting": "Aggressive",
-    "happy": "Happy",
-    "smiling": "Happy",
-    "laughing": "Happy",
-    "calm": "Calm",
-    "quiet": "Calm",
-    "relaxed": "Calm",
-    "sad": "Sad",
-    "crying": "Sad",
-    "depressed": "Sad",
-    "good": "Happy",
-    "fine": "Happy",
-    "okay": "Calm",
-    "great": "Happy",
-    "excited": "Happy",
-    "content": "Calm",
-    "peaceful": "Calm"
+# -------------------------
+# Keyword Definitions
+# -------------------------
+
+MOOD_KEYWORDS = {
+    "Anxious": {"anxious", "restless", "nervous", "scared"},
+    "Irritable": {"angry", "irritated", "annoyed"},
+    "Aggressive": {"aggressive", "hit", "hitting", "shout", "shouting"},
+    "Sad": {"sad", "cry", "crying", "upset"},
+    "Happy": {"happy", "smile", "smiling", "laugh", "laughing", "excited", "good", "great"},
+    "Calm": {"calm", "quiet", "relaxed", "okay", "fine", "peaceful"}
 }
 
-SLEEP_MAP = {
-    "slept well": "Good",
-    "sleep well": "Good",
-    "good sleep": "Good",
-    "slept through": "Good",
-    "poor sleep": "Poor",
-    "didn't sleep": "Poor",
-    "did not sleep": "Poor",
-    "awake all night": "Poor",
-    "restless night": "Disturbed",
-    "restless sleep": "Disturbed",
-    "woke up": "Disturbed"
+SLEEP_KEYWORDS = {
+    "Good": {"sleep", "slept", "rested"},
+    "Poor": {"awake", "insomnia"},
+    "Disturbed": {"restless", "wake", "woke"}
 }
 
-MEAL_MAP = {
-    "skipped lunch": "Skipped",
-    "skipped dinner": "Skipped",
-    "skipped breakfast": "Skipped",
-    "skipped meal": "Skipped",
-    "didn't eat": "Skipped",
-    "did not eat": "Skipped",
-    "refused food": "Skipped",
-    "ate less": "Reduced",
-    "ate little": "Reduced",
-    "left food": "Reduced",
-    "ate well": "Normal",
-    "ate all": "Normal",
-    "finished meal": "Normal",
-    "had meal": "Normal"
+MEAL_KEYWORDS = {
+    "Skipped": {"skip", "refuse"},
+    "Reduced": {"less", "little", "partial"},
+    "Normal": {"eat", "ate", "finish", "meal"}
 }
 
-INCIDENT_MAP = {
-    "outburst": "Minor",
-    "shouted": "Minor",
-    "argued": "Minor",
-    "hit": "Concerning",
-    "punched": "Concerning",
-    "threw": "Concerning",
-    "injury": "Concerning",
-    "cut": "Concerning",
-    "bruise": "Concerning",
-    "fell": "Minor",
-    "trip": "Minor",
-    "slip": "Minor",
-    "attacked": "Critical",
-    "emergency": "Critical"
+INCIDENT_KEYWORDS = {
+    "Minor": {"shout", "argue", "fell", "fall", "slip", "trip"},
+    "Concerning": {"hit", "throw", "injury", "bruise"},
+    "Critical": {"attack", "emergency"}
 }
 
-
-MEDICATION_MAP = {
-    "took meds": "Yes",
-    "meds given": "Yes",
-    "tablets given": "Yes",
-    "medicine given": "Yes",
-    "refused meds": "Refused",
-    "spat out meds": "Refused",
-    "missed meds": "Missed"
+MEDICATION_KEYWORDS = {
+    "Yes": {"took", "given"},
+    "Missed": {"miss"},
+    "Refused": {"refuse", "spit"}
 }
 
-ACTIVITY_MAP = {
-    "played": "Yes",
-    "walked": "Yes",
-    "exercise": "Yes",
-    "participated": "Yes",
-    "activity": "Yes",
-    "drawing": "Yes",
-    "games": "Yes",
-    "refused activity": "No",
-    "stayed in room": "No",
-    "no activity": "No"
+ACTIVITY_KEYWORDS = {
+    "Yes": {"play", "walk", "exercise", "participate", "draw", "game"},
+    "No": {"refuse", "stay", "inactive"}
 }
 
-def match_phrase(text, mapping):
-    for phrase, value in mapping.items():
-        if phrase in text:
-            return value
-    return "Unknown"
+# -------------------------
+# Helper Functions
+# -------------------------
+
+def is_negated(token):
+    """
+    Detect negation using dependency parsing.
+    Example: 'did not sleep', 'never hit'
+    """
+    for child in token.children:
+        if child.dep_ == "neg":
+            return True
+    return False
+
+
+def extract_category(doc, keyword_map, default="Unknown"):
+    """
+    Extract category value using lemma matching,
+    sentence awareness, and negation handling.
+    """
+    detected = []
+
+    for sent in doc.sents:
+        for token in sent:
+            lemma = token.lemma_.lower()
+
+            for label, keywords in keyword_map.items():
+                if lemma in keywords and not is_negated(token):
+                    detected.append(label)
+
+    # If multiple detected, return the last (strongest contextually)
+    if detected:
+        return detected[-1]
+
+    return default
+
+
+# -------------------------
+# Main Extraction Function
+# -------------------------
 
 def extract_with_spacy(text: str):
-    text = text.lower()
+    """
+    Convert caregiver free-text into structured fields.
+    Conservative, explainable, NGO-safe.
+    """
+    if not text or not text.strip():
+        return {
+            "mood": "Unknown",
+            "sleep": "Unknown",
+            "meals": "Unknown",
+            "incident": "Unknown",
+            "medication": "Unknown",
+            "activity": "Unknown"
+        }
+
+    doc = nlp(text.lower())
 
     return {
-        "mood": match_phrase(text, MOOD_MAP),
-        "sleep": match_phrase(text, SLEEP_MAP),
-        "meals": match_phrase(text, MEAL_MAP),
-        "incident": match_phrase(text, INCIDENT_MAP),
-        "medication": match_phrase(text, MEDICATION_MAP),
-        "activity": match_phrase(text, ACTIVITY_MAP)
+        "mood": extract_category(doc, MOOD_KEYWORDS),
+        "sleep": extract_category(doc, SLEEP_KEYWORDS),
+        "meals": extract_category(doc, MEAL_KEYWORDS),
+        "incident": extract_category(doc, INCIDENT_KEYWORDS),
+        "medication": extract_category(doc, MEDICATION_KEYWORDS),
+        "activity": extract_category(doc, ACTIVITY_KEYWORDS)
     }

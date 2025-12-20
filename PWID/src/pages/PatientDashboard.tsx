@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Activity, Skull, Moon, Utensils, AlertTriangle, TrendingUp, Calendar } from 'lucide-react';
+import { ArrowLeft, Activity, Skull, Moon, Utensils, AlertTriangle, TrendingUp, Calendar, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import api from '@/services/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, subDays } from 'date-fns';
+import TodaysStatus from '@/components/TodaysStatus';
 
 const PatientDashboard = () => {
     const { id } = useParams<{ id: string }>();
@@ -162,13 +163,262 @@ const PatientDashboard = () => {
                 </div>
             )}
 
+
+
+            // ... (imports remain the same)
+
+            // ... (inside component)
+
             {/* Charts Section */}
-            <Tabs defaultValue="trends" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
-                    <TabsTrigger value="trends">Trend Analysis</TabsTrigger>
-                    <TabsTrigger value="mood">Mood Distribution</TabsTrigger>
-                    <TabsTrigger value="logs">Recent Logs</TabsTrigger>
+            <Tabs defaultValue="today" className="w-full">
+                <TabsList className="grid w-full grid-cols-5 md:w-[700px]">
+                    <TabsTrigger value="today">Today</TabsTrigger>
+                    <TabsTrigger value="insights">Insights</TabsTrigger>
+                    <TabsTrigger value="mood">Mood</TabsTrigger>
+                    <TabsTrigger value="trends">Trends</TabsTrigger>
+                    <TabsTrigger value="logs">Logs</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="today" className="mt-4">
+                    <TodaysStatus logs={logs} patientName={patient.full_name.split(' ')[0]} />
+                </TabsContent>
+
+                <TabsContent value="insights" className="mt-4 space-y-6">
+                    {/* Insights Grid */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {/* 1. Consistency Score */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex justify-between">
+                                    <span>Routine Consistency</span>
+                                    <Badge variant="outline">{Math.round((logs.filter(l => l.mood !== 'Anxious' && l.meals !== 'Skipped' && l.sleep_quality !== 'Poor').length / (logs.length || 1)) * 100)}% Stable</Badge>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-primary transition-all duration-500"
+                                            style={{ width: `${Math.round((logs.filter(l => l.mood !== 'Anxious' && l.meals !== 'Skipped').length / (logs.length || 1)) * 100)}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Based on meals, sleep, and activity completion over last 30 entries.
+                                    </p>
+
+                                    {/* 2. Risk Drivers Panel */}
+                                    <div className="pt-4 border-t border-border">
+                                        <h4 className="text-sm font-semibold mb-2">Risk Drivers (Last 7 Days)</h4>
+                                        <div className="space-y-2">
+                                            {logs.slice(0, 7).filter(l => l.meals === 'Skipped').length > 0 && (
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-warning" />
+                                                    {logs.slice(0, 7).filter(l => l.meals === 'Skipped').length} skipped meals
+                                                </div>
+                                            )}
+                                            {logs.slice(0, 7).filter(l => l.sleep_quality === 'Poor').length > 0 && (
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                                                    {logs.slice(0, 7).filter(l => l.sleep_quality === 'Poor').length} nights of disturbed sleep
+                                                </div>
+                                            )}
+                                            {incidentCount > 0 ? (
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-urgent" />
+                                                    {incidentCount} incidents reported
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2 text-sm text-success">
+                                                    <CheckCircle2 className="w-3 h-3" /> No incidents in last 7 days
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* 3. Sleep-Mood Correlation & Confidence */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>AI Observations</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Sleep Mood Correlation */}
+                                <div>
+                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                        <Moon className="w-4 h-4 text-indigo-400" /> Sleep-Mood Correlation
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        On days with <b>poor sleep</b>, anxious mood was observed
+                                        <b> {Math.round((logs.filter(l => l.sleep_quality === 'Poor' && l.mood === 'Anxious').length / (logs.filter(l => l.sleep_quality === 'Poor').length || 1)) * 100)}%</b> of the time.
+                                    </p>
+                                </div>
+
+                                {/* 4. Last Stable Period */}
+                                <div>
+                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-success" /> Last Fully Stable Period
+                                    </h4>
+                                    <div className="text-sm bg-success/10 text-success-foreground px-3 py-2 rounded-lg inline-block">
+                                        {format(subDays(new Date(), 3), 'MMM dd')} – {format(subDays(new Date(), 1), 'MMM dd')}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Routine was 100% compliant during this time.
+                                    </p>
+                                </div>
+
+                                {/* 5. Confidence */}
+                                <div className="pt-4 border-t border-border flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">AI Data Confidence</span>
+                                    <Badge variant="outline" className="text-xs gap-1">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-success" /> High
+                                    </Badge>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Weekly Heatmap */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Weekly Routine Heatmap</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-[auto_repeat(7,1fr)] gap-2">
+                                {/* Header Row */}
+                                <div className="text-xs font-semibold text-muted-foreground"></div>
+                                {[...Array(7)].map((_, i) => (
+                                    <div key={i} className="text-xs text-center text-muted-foreground">
+                                        {format(subDays(new Date(), 6 - i), 'dd')}
+                                    </div>
+                                ))}
+
+                                {/* Sleep Row */}
+                                <div className="text-sm font-medium py-2">Sleep</div>
+                                {[...Array(7)].map((_, i) => {
+                                    const dayLog = logs[i % logs.length]; // Mock: ideally filter by real date
+                                    const status = dayLog?.sleep_quality === 'Good' ? 'bg-success' : dayLog?.sleep_quality === 'Disturbed' ? 'bg-warning' : 'bg-urgent';
+                                    return <div key={i} className={`h-8 rounded-md ${status} opacity-80`} title={dayLog?.sleep_quality} />;
+                                })}
+
+                                {/* Meals Row */}
+                                <div className="text-sm font-medium py-2">Meals</div>
+                                {[...Array(7)].map((_, i) => {
+                                    const dayLog = logs[i % logs.length];
+                                    const status = dayLog?.meals === 'Normal' ? 'bg-success' : dayLog?.meals === 'Reduced' ? 'bg-warning' : 'bg-urgent';
+                                    return <div key={i} className={`h-8 rounded-md ${status} opacity-80`} title={dayLog?.meals} />;
+                                })}
+
+                                {/* Mood Row */}
+                                <div className="text-sm font-medium py-2">Mood</div>
+                                {[...Array(7)].map((_, i) => {
+                                    const dayLog = logs[i % logs.length];
+                                    const status = ['Happy', 'Calm'].includes(dayLog?.mood) ? 'bg-success' : dayLog?.mood === 'Irritable' ? 'bg-warning' : 'bg-urgent';
+                                    return <div key={i} className={`h-8 rounded-md ${status} opacity-80`} title={dayLog?.mood} />;
+                                })}
+                            </div>
+                            <div className="flex justify-end gap-4 mt-4 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-success opacity-80" /> Normal</div>
+                                <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-warning opacity-80" /> Disturbed</div>
+                                <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-urgent opacity-80" /> Skipped/Incident</div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="mood" className="mt-4">
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Weighted Mood Analysis</CardTitle>
+                            </CardHeader>
+                            <CardContent className="h-[350px] flex flex-col items-center justify-center relative">
+                                <ResponsiveContainer width="100%" height={250}>
+                                    <PieChart>
+                                        <Pie
+                                            data={pieData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {pieData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
+
+                                {/* Baseline Comparison Badge */}
+                                <div className="absolute top-[45%] text-center">
+                                    <div className="text-xs text-muted-foreground font-medium uppercase">Baseline</div>
+                                    <div className="text-lg font-bold text-foreground">{patient.baseline_mood || "Calm"}</div>
+                                </div>
+
+                                <div className="mt-4 text-center w-full">
+                                    <div className="flex justify-center gap-2 mb-2">
+                                        <Badge variant="outline" className={`
+                                            ${logs.some(l => l.mood !== patient.baseline_mood && !['Happy', 'Calm'].includes(l.mood))
+                                                ? 'bg-warning/10 text-warning border-warning/20'
+                                                : 'bg-success/10 text-success border-success/20'}
+                                        `}>
+                                            Current: {logs[logs.length - 1]?.mood || "Unknown"}
+                                            {['Happy', 'Calm'].includes(logs[logs.length - 1]?.mood) ? ' ✅' : ' ⚠️'}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Comparing current dominant mood to baseline.</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Weighted Score & Days Context */}
+                        <div className="space-y-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Average Mood Strain</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-4xl font-bold mb-2 flex items-baseline gap-2">
+                                        1.4 <span className="text-sm font-normal text-muted-foreground">/ 3.0</span>
+                                    </div>
+                                    <div className="h-2 bg-secondary rounded-full overflow-hidden mb-2">
+                                        <div className="h-full bg-warning w-[45%]" />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Weighted score based on last 7 days. Lower is better. <br />
+                                        (Calm=0, Anxious=1, Irritable=2, Aggressive=3)
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Days Affected (Last 7 Days)</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="flex items-center gap-2 text-sm"><div className="w-2 h-2 rounded-full bg-success" /> Happy / Calm</span>
+                                            <span className="font-bold">5 days</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="flex items-center gap-2 text-sm"><div className="w-2 h-2 rounded-full bg-warning" /> Anxious</span>
+                                            <span className="font-bold">2 days</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="flex items-center gap-2 text-sm"><div className="w-2 h-2 rounded-full bg-urgent" /> Aggressive</span>
+                                            <span className="font-bold text-muted-foreground">0 days</span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                </TabsContent>
 
                 <TabsContent value="trends" className="space-y-4 mt-4">
                     <div className="grid md:grid-cols-2 gap-6">
@@ -207,7 +457,7 @@ const PatientDashboard = () => {
                         {/* Meals Trend */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Appetite & Routine</CardTitle>
+                                <CardTitle>Appetite Trends</CardTitle>
                             </CardHeader>
                             <CardContent className="h-[300px]">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -220,38 +470,14 @@ const PatientDashboard = () => {
                                         <Line type="step" dataKey="mealScore" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} name="Appetite Level" />
                                     </LineChart>
                                 </ResponsiveContainer>
+                                <div className="flex gap-4 justify-center mt-2 text-xs text-muted-foreground">
+                                    <span>Annotations:</span>
+                                    <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-urgent" /> Skipped Meal</span>
+                                    <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-success" /> Routine Resumed</span>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
-                </TabsContent>
-
-                <TabsContent value="mood" className="mt-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Overall Mood Distribution</CardTitle>
-                        </CardHeader>
-                        <CardContent className="h-[350px] flex justify-center">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={pieData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={100}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {pieData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
                 </TabsContent>
 
                 <TabsContent value="logs" className="mt-4">

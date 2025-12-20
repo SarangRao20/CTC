@@ -16,11 +16,13 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Task } from '@/data/mockData';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const RoutineChecksPage = () => {
   const { tasks, patients, completeTask, caregiver } = useApp();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const patientIdFilter = searchParams.get('patientId');
 
   const getPatientName = (patientId: string) => {
     return patients.find(p => p.id === patientId)?.name || 'Unknown Patient';
@@ -37,17 +39,19 @@ const RoutineChecksPage = () => {
     }
   };
 
-  // Group tasks by patient
-  const patientTasks = patients.reduce((acc, patient) => {
-    const pTasks = tasks.filter(t => String(t.patientId) === String(patient.id));
-    if (pTasks.length > 0) {
-      acc.push({
-        patient,
-        tasks: pTasks
-      });
-    }
-    return acc;
-  }, [] as { patient: any, tasks: Task[] }[]);
+  // Group tasks by patient (filtered)
+  const patientTasks = patients
+    .filter(p => !patientIdFilter || String(p.id) === patientIdFilter)
+    .reduce((acc, patient) => {
+      const pTasks = tasks.filter(t => String(t.patientId) === String(patient.id));
+      if (pTasks.length > 0) {
+        acc.push({
+          patient,
+          tasks: pTasks
+        });
+      }
+      return acc;
+    }, [] as { patient: any, tasks: Task[] }[]);
 
   const TaskCard = ({ task }: { task: Task }) => (
     <article
@@ -112,14 +116,23 @@ const RoutineChecksPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="max-w-5xl mx-auto p-4 md:p-6">
+    <div className="h-screen bg-background flex flex-col">
+      <main className="max-w-5xl mx-auto p-4 md:p-6 w-full flex-1 flex flex-col min-h-0">
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Routine Checks</h1>
-            <p className="text-muted-foreground">Tasks for {caregiver?.ngo_name || 'your residents'}</p>
+            <h1 className="text-2xl font-bold text-foreground">
+              {patientIdFilter ? `Tasks for ${getPatientName(patientIdFilter)}` : 'Routine Checks'}
+            </h1>
+            <p className="text-muted-foreground">
+              {patientIdFilter ? 'Specific resident tasks' : `Tasks for ${caregiver?.ngo_name || 'your residents'}`}
+            </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {patientIdFilter && (
+              <Button variant="ghost" size="sm" onClick={() => setSearchParams({})} className="mr-2">
+                Clear Filter
+              </Button>
+            )}
             <div className="px-3 py-1 bg-urgent-light/20 text-urgent rounded-lg text-sm font-medium border border-urgent/20">
               {tasks.filter(t => t.status === 'overdue').length} Overdue
             </div>
@@ -129,7 +142,7 @@ const RoutineChecksPage = () => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="flex-1 overflow-y-auto min-h-0 pb-20 pr-2">
           {patientTasks.map(({ patient, tasks: pTasks }) => {
             const pending = pTasks.filter(t => t.status !== 'completed');
             const completed = pTasks.filter(t => t.status === 'completed');

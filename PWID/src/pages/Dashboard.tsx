@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import CareCard from '@/components/CareCard';
 import ProgressModal from '@/components/ProgressModal';
+import DashboardStats from '@/components/DashboardStats';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -64,6 +65,9 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Dashboard Stats */}
+      <DashboardStats />
+
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>

@@ -40,19 +40,28 @@ const SignupPage: React.FC = () => {
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Coordinator-specific fields
+  const [orgSize, setOrgSize] = useState('');
+  const [hasManagementAccess, setHasManagementAccess] = useState(false);
+
   const validate = () => {
     const e: { [k: string]: string } = {};
     if (!name.trim()) e.name = 'Please enter your full name.';
     if (!email.trim()) e.email = 'Please enter your email.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email address.';
-    
+
     // Validate NGO selection
     if (!ngoName || ngoName === '') {
       e.ngoName = 'Please select your NGO.';
     } else if (ngoName === '__other__' && !customNgo.trim()) {
       e.ngoName = 'Please enter your NGO name.';
     }
-    
+
+    // Validate Coordinator-specific fields
+    if (role === 'Coordinator' && !orgSize) {
+      e.orgSize = 'Please select organization size.';
+    }
+
     if (!password) e.password = 'Create a password.';
     else if (password.length < 8) e.password = 'Minimum 8 characters.';
     if (!confirmPassword) e.confirmPassword = 'Confirm your password.';
@@ -71,13 +80,16 @@ const SignupPage: React.FC = () => {
 
     try {
       const finalNgoName = ngoName === '__other__' ? customNgo : ngoName;
-      
+
       const response = await api.post('/caretaker/register', {
         name,
         email,
         password,
         role,
         ngo_name: finalNgoName,
+        // Coordinator-specific metadata
+        org_size: role === 'Coordinator' ? orgSize : null,
+        management_access: role === 'Coordinator' ? hasManagementAccess : false,
       });
 
       if (response.status === 201 && response.data.caretaker) {
@@ -88,10 +100,10 @@ const SignupPage: React.FC = () => {
 
         // Auto-login the user with the returned caretaker data
         login(response.data.caretaker);
-        
+
         // Refresh data to fetch PWIDs for this NGO
         await refreshData();
-        
+
         // Navigate to dashboard
         navigate('/dashboard');
       }
@@ -193,12 +205,41 @@ const SignupPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Caregiver">Caregiver</SelectItem>
-                      <SelectItem value="Nurse">Nurse</SelectItem>
-                      <SelectItem value="Therapist">Therapist</SelectItem>
-                      <SelectItem value="Coordinator">Coordinator</SelectItem>
+                      <SelectItem value="Coordinator">Coordinator/NGO</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Coordinator-Specific Fields */}
+                {role === 'Coordinator' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="orgSize" className="text-foreground font-medium">Organization Size *</Label>
+                      <Select value={orgSize} onValueChange={setOrgSize}>
+                        <SelectTrigger id="orgSize" className="h-12">
+                          <SelectValue placeholder="Select organization size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Small (&lt;10 patients)</SelectItem>
+                          <SelectItem value="medium">Medium (10-50 patients)</SelectItem>
+                          <SelectItem value="large">Large (&gt;50 patients)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.orgSize && <p className="text-xs text-urgent mt-1">{errors.orgSize}</p>}
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/20">
+                      <Checkbox
+                        id="managementAccess"
+                        checked={hasManagementAccess}
+                        onCheckedChange={(v) => setHasManagementAccess(Boolean(v))}
+                      />
+                      <Label htmlFor="managementAccess" className="text-sm text-foreground cursor-pointer">
+                        Grant management access (view all patients, manage caregivers, export reports)
+                      </Label>
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="ngoName" className="text-foreground font-medium">NGO Name</Label>

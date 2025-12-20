@@ -1,8 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Mic,
   Camera,
@@ -12,25 +20,62 @@ import {
   User,
   Calendar,
   Filter,
-  Download
+  Download,
+  AlertTriangle,
+  TrendingUp
 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, subDays, isAfter } from 'date-fns';
 import { HistoryEvent } from '@/data/mockData';
 
 
 const HistoryPage = () => {
-  const { events, patients } = useApp();
+  const { events, patients, caregiver } = useApp();
   const [searchParams] = useSearchParams();
   const patientIdFilter = searchParams.get('patientId');
 
+  // Filter states
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('7days');
+
   const filteredEvents = useMemo(() => {
-    const list = !patientIdFilter
+    let list = !patientIdFilter
       ? events
       : events.filter(e => e.patientId === patientIdFilter);
 
+    // Filter by type
+    if (typeFilter !== 'all') {
+      list = list.filter(e => e.type === typeFilter);
+    }
+
+    // Filter by date
+    const now = new Date();
+    if (dateFilter === '24hours') {
+      list = list.filter(e => isAfter(new Date(e.timestamp), subDays(now, 1)));
+    } else if (dateFilter === '7days') {
+      list = list.filter(e => isAfter(new Date(e.timestamp), subDays(now, 7)));
+    } else if (dateFilter === '30days') {
+      list = list.filter(e => isAfter(new Date(e.timestamp), subDays(now, 30)));
+    }
+
     // Sort by newest first
     return list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [events, patientIdFilter]);
+  }, [events, patientIdFilter, typeFilter, dateFilter]);
+
+  // Analytics for full history (coordinators)
+  const analytics = useMemo(() => {
+    if (patientIdFilter) return null;
+
+    const incidentCount = filteredEvents.filter(e => e.type === 'incident').length;
+    const voiceCount = filteredEvents.filter(e => e.type === 'voice').length;
+    const vitalsCount = filteredEvents.filter(e => e.type === 'vitals').length;
+
+    return {
+      totalEvents: filteredEvents.length,
+      incidents: incidentCount,
+      voiceNotes: voiceCount,
+      vitalChecks: vitalsCount
+    };
+  }, [filteredEvents, patientIdFilter]);
 
   const getPatientName = (patientId: string) => {
     return patients.find(p => p.id === patientId)?.name || 'Unknown Patient';
@@ -90,6 +135,54 @@ const HistoryPage = () => {
     <div className="min-h-screen bg-background">
 
       <main className="max-w-4xl mx-auto p-4 md:p-6">
+        {/* Analytics Cards (for full history / coordinators only) */}
+        {!patientIdFilter && analytics && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Events</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analytics.totalEvents}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Incidents</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-urgent" />
+                  <div className="text-2xl font-bold">{analytics.incidents}</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Voice Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Mic className="w-4 h-4 text-info" />
+                  <div className="text-2xl font-bold">{analytics.voiceNotes}</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Vitals Checks</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-success" />
+                  <div className="text-2xl font-bold">{analytics.vitalChecks}</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Header with filters */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
@@ -110,6 +203,47 @@ const HistoryPage = () => {
             </Button>
           </div>
         </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Event type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="voice">Voice Notes</SelectItem>
+                <SelectItem value="image">Images</SelectItem>
+                <SelectItem value="vitals">Vitals</SelectItem>
+                <SelectItem value="medication">Medication</SelectItem>
+                <SelectItem value="incident">Incidents</SelectItem>
+                <SelectItem value="note">Notes</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Date range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24hours">Last 24 hours</SelectItem>
+              <SelectItem value="7days">Last 7 days</SelectItem>
+              <SelectItem value="30days">Last 30 days</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {(typeFilter !== 'all' || dateFilter !== '7days') && (
+            <Button variant="ghost" size="sm" onClick={() => { setTypeFilter('all'); setDateFilter('7days'); }}>
+              Clear filters
+            </Button>
+          )}
+        </div>
+
+        {/* Events list */}
 
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           {filteredEvents.length === 0 ? (

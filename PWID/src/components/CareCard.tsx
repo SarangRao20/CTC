@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { Activity, Clock, FileText, Send, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Activity, Clock, FileText, Send, Image as ImageIcon, Loader2, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import VoiceInputButton from './VoiceInputButton';
 import api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import ObservationResultModal from './ObservationResultModal';
+import AddTaskModal from './AddTaskModal';
 import { useApp } from '@/context/AppContext';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -28,6 +29,7 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [observationResult, setObservationResult] = useState(null);
     const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+    const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -169,18 +171,22 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                         </Badge>
                     </div>
 
-                    {/* Quick Stats */}
+                    {/* Quick Stats and Add Task */}
                     <div className="grid grid-cols-2 gap-2 mb-5">
                         <div className="bg-secondary/40 rounded-lg p-2.5 flex flex-col items-center justify-center text-center">
                             <Activity className="w-4 h-4 text-primary mb-1" />
                             <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Vitals</span>
                             <span className="text-xs font-bold text-foreground">Normal</span>
                         </div>
-                        <div className="bg-secondary/40 rounded-lg p-2.5 flex flex-col items-center justify-center text-center">
-                            <Clock className="w-4 h-4 text-primary mb-1" />
-                            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Last Log</span>
-                            <span className="text-xs font-bold text-foreground">{lastLogTime}</span>
-                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-auto rounded-lg p-2.5 flex flex-col items-center justify-center bg-primary/5 hover:bg-primary/10 border-primary/20"
+                            onClick={() => setIsAddTaskOpen(true)}
+                        >
+                            <Plus className="w-4 h-4 text-primary mb-1" />
+                            <span className="text-[10px] text-primary font-medium uppercase tracking-wide">Add Task</span>
+                        </Button>
                     </div>
 
                     <div className="mt-auto space-y-3">
@@ -227,6 +233,15 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                                     <FileText className="w-4 h-4" />
                                 </Button>
                                 <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 rounded-full text-muted-foreground hover:text-primary"
+                                    onClick={() => navigate(`/routine?patientId=${patient.id}`)}
+                                    title="View Routine Checks"
+                                >
+                                    <Clock className="w-4 h-4" />
+                                </Button>
+                                <Button
                                     size="sm"
                                     className="rounded-lg px-4 shadow-none bg-primary text-primary-foreground hover:bg-primary/90"
                                     onClick={handleLogSubmit}
@@ -244,6 +259,13 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                 isOpen={isResultModalOpen}
                 onClose={() => setIsResultModalOpen(false)}
                 data={observationResult}
+            />
+
+            <AddTaskModal
+                isOpen={isAddTaskOpen}
+                onClose={() => setIsAddTaskOpen(false)}
+                patientId={patient.id}
+                patientName={patient.name}
             />
         </>
     );

@@ -610,6 +610,43 @@ def get_tasks():
     } for task in tasks]
     return jsonify(task_list)
 
+@routes_bp.route('/tasks', methods=['POST'])
+def create_task():
+    data = request.get_json()
+    
+    # Validate required fields
+    if not data.get('pwid_id') or not data.get('title'):
+        return jsonify({'error': 'Missing required fields: pwid_id and title'}), 400
+    
+    task = Task(
+        pwid_id=data['pwid_id'],
+        title=data['title'],
+        description=data.get('description', ''),
+        category=data.get('category', 'other'),
+        priority=data.get('priority', 'medium'),
+        due_time=data.get('due_time'),
+        status='pending'
+    )
+    
+    db.session.add(task)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Task created successfully',
+        'id': task.id,
+        'task': {
+            'id': task.id,
+            'patientId': task.pwid_id,
+            'title': task.title,
+            'description': task.description,
+            'category': task.category,
+            'priority': task.priority,
+            'dueTime': task.due_time,
+            'status': task.status
+        }
+    }), 201
+
+
 @routes_bp.route('/tasks/<int:task_id>/complete', methods=['POST'])
 def complete_task(task_id):
     data = request.get_json()

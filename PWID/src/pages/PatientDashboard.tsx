@@ -39,6 +39,17 @@ const PatientDashboard = () => {
         fetchData();
     }, [id]);
 
+    const handleDepart = async () => {
+        try {
+            const res = await api.post('/api/track/depart', { pwid_id: patient.id });
+            const { estimated_arrival, minutes } = res.data;
+            alert(`Departure logged. ETA: ${new Date(estimated_arrival).toLocaleTimeString()} (${minutes} mins)`);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to log departure");
+        }
+    };
+
     if (loading) {
         return <div className="p-8 space-y-4">
             <Skeleton className="h-12 w-1/3" />
@@ -98,6 +109,15 @@ const PatientDashboard = () => {
                     <p className="text-muted-foreground">Room {patient.roomNumber} • Age {patient.age} • {patient.supportLevel}</p>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
+                    {patient.location_type === 'non-residential' && (
+                        <Button
+                            variant="outline"
+                            className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                            onClick={handleDepart}
+                        >
+                            <Calendar className="w-4 h-4 mr-2" /> Mark Left NGO
+                        </Button>
+                    )}
                     <Badge className={`text-lg px-4 py-1.5 rounded-full ${getRiskColor(risk?.risk_level)}`}>
                         {risk?.risk_level} Risk Level
                     </Badge>

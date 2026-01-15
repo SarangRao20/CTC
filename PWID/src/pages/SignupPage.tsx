@@ -25,6 +25,8 @@ const SignupPage: React.FC = () => {
   const [ngoName, setNgoName] = useState('');
   const [ngoOptions, setNgoOptions] = useState<string[]>([]);
   const [customNgo, setCustomNgo] = useState('');
+  const [ngoType, setNgoType] = useState('residential');
+  const [ngoAddress, setNgoAddress] = useState('');
 
   // Fetch NGO options on mount
   useEffect(() => {
@@ -87,6 +89,8 @@ const SignupPage: React.FC = () => {
         password,
         role,
         ngo_name: finalNgoName,
+        ngo_type: ngoName === '__other__' ? ngoType : undefined,
+        ngo_address: ngoName === '__other__' ? ngoAddress : undefined,
         // Coordinator-specific metadata
         org_size: role === 'Coordinator' ? orgSize : null,
         management_access: role === 'Coordinator' ? hasManagementAccess : false,
@@ -266,6 +270,32 @@ const SignupPage: React.FC = () => {
                         onChange={(e) => setCustomNgo(e.target.value)}
                         className="h-12 text-base"
                       />
+                    </div>
+                  )}
+                  {ngoName === '__other__' && (
+                    <div className="mt-2 space-y-2">
+                       <Label className="text-foreground font-medium">NGO Type</Label>
+                       <Select value={ngoType} onValueChange={setNgoType}>
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="residential">Residential</SelectItem>
+                          <SelectItem value="non-residential">Non-Residential</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {ngoType === 'non-residential' && (
+                        <div className="space-y-2">
+                           <Label className="text-foreground font-medium">NGO Address</Label>
+                           <Input 
+                              placeholder="Enter NGO Address" 
+                              value={ngoAddress} 
+                              onChange={(e) => setNgoAddress(e.target.value)}
+                              className="h-12 text-base"
+                           />
+                        </div>
+                      )}
                     </div>
                   )}
                   {errors.ngoName && <p className="text-xs text-urgent mt-1">{errors.ngoName}</p>}

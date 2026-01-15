@@ -12,6 +12,7 @@ import HistoryPage from "./pages/HistoryPage";
 import RoutineChecksPage from "./pages/RoutineChecksPage";
 import ReportPage from "./pages/ReportPage";
 import PatientDashboard from "./pages/PatientDashboard";
+import ParentDashboard from "./pages/ParentDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const AppRoutes = () => {
         path="/signup"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <SignupPage />}
       />
+      <Route path="/parent/dashboard" element={<ParentDashboard />} />
 
       {/* Protected Routes wrapped in Layer */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

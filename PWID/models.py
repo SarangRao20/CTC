@@ -3,13 +3,20 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+class NGO(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    type = db.Column(db.String(50), nullable=False) # 'residential', 'non-residential'
+    address = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 class PWID(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(100), nullable=False)
     age = db.Column(db.Integer, nullable=False)
     age_group = db.Column(db.String(50), nullable=False)
     support_level = db.Column(db.String(50), nullable=False)
-    ngo_name = db.Column(db.String(100), nullable=False)
+    ngo_name = db.Column(db.String(100), nullable=False) # Keep as string for now to avoid breaking existing code, or ideally FK to NGO
     location_type = db.Column(db.String(50), nullable=False)
     baseline_mood = db.Column(db.String(50), nullable=False)
     room_number = db.Column(db.String(50))
@@ -17,6 +24,25 @@ class PWID(db.Model):
     medications_json = db.Column(db.JSON)  # Store as a list of strings
     allergies_json = db.Column(db.JSON)    # Store as a list of strings
     is_active = db.Column(db.Boolean, default=True)
+    home_address = db.Column(db.String(255)) # New field for non-residential
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Guardian(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    pwid_id = db.Column(db.Integer, db.ForeignKey('pwid.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class TrackingLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pwid_id = db.Column(db.Integer, db.ForeignKey('pwid.id'), nullable=False)
+    date = db.Column(db.Date, default=datetime.utcnow().date)
+    departure_time = db.Column(db.DateTime)
+    estimated_arrival_time = db.Column(db.DateTime)
+    actual_arrival_time = db.Column(db.DateTime)
+    status = db.Column(db.String(50), default='in_transit') # 'in_transit', 'arrived', 'overdue'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Caretaker(db.Model):

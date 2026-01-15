@@ -2,7 +2,7 @@ from flask import jsonify, request, Blueprint
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, PWID, Caretaker, Routinelog, Task, Event
+from models import db, PWID, Caretaker, Routinelog, Task, Event, NGO, Guardian, TrackingLog
 from flasgger import swag_from 
 from risk_engine import calculate_single_risk, calculate_trend_risk
 from services.observe_engine import process_observation
@@ -92,6 +92,16 @@ def register_caretaker():
     if Caretaker.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email already exists'}), 400
     
+    # Create or Get NGO
+    ngo = NGO.query.filter_by(name=data['ngo_name']).first()
+    if not ngo:
+        # If NGO doesn't exist, create it (assuming data provides type/address for new NGOs)
+        ngo_type = data.get('ngo_type', 'residential') # Default to residential if not key
+        ngo_address = data.get('ngo_address', '')
+        ngo = NGO(name=data['ngo_name'], type=ngo_type, address=ngo_address)
+        db.session.add(ngo)
+        db.session.commit()
+
     hashed_password = generate_password_hash(data['password'])
     caretaker = Caretaker(
         name=data['name'],
@@ -735,4 +745,115 @@ def voice_transcribe():
         if "error" in result:
              return jsonify(result), 500
              
-        return jsonify(result)
+
+@routes_bp.route('/guardian/register', methods=['POST'])
+def register_guardian():
+    data = request.get_json()
+    if not all(k in data for k in ('name', 'email', 'password', 'pwid_id')):
+        return jsonify({'error': 'Missing fields'}), 400
+    
+    if Guardian.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists'}), 400
+    
+    hashed_password = generate_password_hash(data['password'])
+    guardian = Guardian(
+        name=data['name'],
+        email=data['email'],
+        password_hash=hashed_password,
+        pwid_id=data['pwid_id'],
+        created_at=datetime.utcnow()
+    )
+    db.session.add(guardian)
+    db.session.commit()
+
+    return jsonify({'message': 'Guardian registered successfully'}), 201
+
+@routes_bp.route('/guardian/login', methods=['POST'])
+def login_guardian():
+    data = request.get_json()
+    guardian = Guardian.query.filter_by(email=data.get('email')).first()
+    
+    if guardian and check_password_hash(guardian.password_hash, data.get('password')):
+        return jsonify({
+            'message': 'Login successful',
+            'guardian': {
+                'id': guardian.id,
+                'name': guardian.name,
+                'email': guardian.email,
+                'pwid_id': guardian.pwid_id
+            }
+        }), 200
+    
+    return jsonify({'error': 'Invalid credentials'}), 401
+
+@routes_bp.route('/api/track/depart', methods=['POST'])
+def track_depart():
+    data = request.get_json()
+    pwid_id = data.get('pwid_id')
+    
+    if not pwid_id:
+        return jsonify({'error': 'Missing pwid_id'}), 400
+        
+    pwid = PWID.query.get_or_404(pwid_id)
+    
+    # Mock ETA Calculation: random between 20-40 minutes
+    import random
+    travel_time_minutes = random.randint(20, 40)
+    departure_time = datetime.utcnow()
+    estimated_arrival_time = departure_time + timedelta(minutes=travel_time_minutes)
+    
+    log = TrackingLog(
+        pwid_id=pwid_id,
+        date=departure_time.date(),
+        departure_time=departure_time,
+        estimated_arrival_time=estimated_arrival_time,
+        status='in_transit'
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Departure logged',
+        'estimated_arrival': estimated_arrival_time.isoformat(),
+        'minutes': travel_time_minutes
+    }), 201
+
+@routes_bp.route('/api/track/status/<int:pwid_id>', methods=['GET'])
+def track_status(pwid_id):
+    # Get the latest log for today
+    today = datetime.utcnow().date()
+    log = TrackingLog.query.filter_by(pwid_id=pwid_id, date=today).order_by(TrackingLog.created_at.desc()).first()
+    
+    if not log:
+        return jsonify({'status': 'no_record', 'message': 'No travel logged for today.'})
+    
+    # Check for overdue
+    if log.status == 'in_transit' and log.estimated_arrival_time:
+         # Add 10 minutes buffer as per requirement (5-10 min)
+         if datetime.utcnow() > (log.estimated_arrival_time + timedelta(minutes=10)):
+             log.status = 'overdue'
+             db.session.commit()
+             # Ideally trigger notification here (email/sms)
+        
+    return jsonify({
+        'status': log.status,
+        'departure_time': log.departure_time.isoformat() if log.departure_time else None,
+        'estimated_arrival_time': log.estimated_arrival_time.isoformat() if log.estimated_arrival_time else None,
+        'actual_arrival_time': log.actual_arrival_time.isoformat() if log.actual_arrival_time else None,
+        'log_id': log.id
+    })
+
+@routes_bp.route('/api/track/confirm', methods=['POST'])
+def track_confirm():
+    data = request.get_json()
+    log_id = data.get('log_id')
+    
+    if not log_id:
+        return jsonify({'error': 'Missing log_id'}), 400
+        
+    log = TrackingLog.query.get_or_404(log_id)
+    log.status = 'arrived'
+    log.actual_arrival_time = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({'message': 'Arrival confirmed'}), 200

@@ -35,6 +35,20 @@ const SignupPage: React.FC = () => {
     }).catch(() => setNgoOptions([]));
   }, []);
   const [role, setRole] = useState('Caregiver');
+  // For parent role
+  const [childId, setChildId] = useState('');
+  const [childOptions, setChildOptions] = useState<{ id: string, name: string }[]>([]);
+  // Helper to get selected child object
+  const selectedChild = childOptions.find((c) => String(c.id) === String(childId));
+
+  // Fetch PWID options for parent role
+  useEffect(() => {
+    if (role === 'Parent') {
+      api.get('/pwids').then(res => {
+        setChildOptions(res.data.map((p: any) => ({ id: p.id, name: p.full_name })));
+      }).catch(() => setChildOptions([]));
+    }
+  }, [role]);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -53,15 +67,22 @@ const SignupPage: React.FC = () => {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email address.';
 
     // Validate NGO selection
-    if (!ngoName || ngoName === '') {
-      e.ngoName = 'Please select your NGO.';
-    } else if (ngoName === '__other__' && !customNgo.trim()) {
-      e.ngoName = 'Please enter your NGO name.';
+    if (role !== 'Parent') {
+      if (!ngoName || ngoName === '') {
+        e.ngoName = 'Please select your NGO.';
+      } else if (ngoName === '__other__' && !customNgo.trim()) {
+        e.ngoName = 'Please enter your NGO name.';
+      }
     }
 
     // Validate Coordinator-specific fields
     if (role === 'Coordinator' && !orgSize) {
       e.orgSize = 'Please select organization size.';
+    }
+
+    // Validate Parent-specific fields
+    if (role === 'Parent' && !childId) {
+      e.childId = 'Please select your child.';
     }
 
     if (!password) e.password = 'Create a password.';
@@ -81,35 +102,47 @@ const SignupPage: React.FC = () => {
     setSubmitting(true);
 
     try {
-      const finalNgoName = ngoName === '__other__' ? customNgo : ngoName;
-
-      const response = await api.post('/caretaker/register', {
-        name,
-        email,
-        password,
-        role,
-        ngo_name: finalNgoName,
-        ngo_type: ngoName === '__other__' ? ngoType : undefined,
-        ngo_address: ngoName === '__other__' ? ngoAddress : undefined,
-        // Coordinator-specific metadata
-        org_size: role === 'Coordinator' ? orgSize : null,
-        management_access: role === 'Coordinator' ? hasManagementAccess : false,
-      });
-
-      if (response.status === 201 && response.data.caretaker) {
-        toast({
-          title: 'Account created',
-          description: 'Your caregiver profile is ready.',
+      if (role === 'Parent') {
+        // Register as parent
+        const response = await api.post('/parent/register', {
+          name,
+          email,
+          password,
+          pwid_id: childId,
         });
-
-        // Auto-login the user with the returned caretaker data
-        login(response.data.caretaker);
-
-        // Refresh data to fetch PWIDs for this NGO
-        await refreshData();
-
-        // Navigate to dashboard
-        navigate('/dashboard');
+        if (response.status === 201) {
+          toast({
+            title: 'Account created',
+            description: 'Your parent profile is ready.',
+          });
+          // Auto-login
+          const parent = { ...response.data.parent, role: 'Parent' };
+          login(parent);
+          navigate('/parent/dashboard');
+        }
+      } else {
+        const finalNgoName = ngoName === '__other__' ? customNgo : ngoName;
+        const response = await api.post('/caretaker/register', {
+          name,
+          email,
+          password,
+          role,
+          ngo_name: finalNgoName,
+          ngo_type: ngoName === '__other__' ? ngoType : undefined,
+          ngo_address: ngoName === '__other__' ? ngoAddress : undefined,
+          // Coordinator-specific metadata
+          org_size: role === 'Coordinator' ? orgSize : null,
+          management_access: role === 'Coordinator' ? hasManagementAccess : false,
+        });
+        if (response.status === 201 && response.data.caretaker) {
+          toast({
+            title: 'Account created',
+            description: 'Your caregiver profile is ready.',
+          });
+          login(response.data.caretaker);
+          await refreshData();
+          navigate('/dashboard');
+        }
       }
     } catch (err: any) {
       toast({
@@ -201,6 +234,7 @@ const SignupPage: React.FC = () => {
                   {errors.email && <p className="text-xs text-urgent mt-1">{errors.email}</p>}
                 </div>
 
+
                 <div className="space-y-2">
                   <Label className="text-foreground font-medium">Role</Label>
                   <Select value={role} onValueChange={setRole}>
@@ -210,9 +244,32 @@ const SignupPage: React.FC = () => {
                     <SelectContent>
                       <SelectItem value="Caregiver">Caregiver</SelectItem>
                       <SelectItem value="Coordinator">Coordinator/NGO</SelectItem>
+                      <SelectItem value="Parent">Parent</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Parent-Specific Fields */}
+                {role === 'Parent' && (
+                  <div className="space-y-2">
+                    <Label className="text-foreground font-medium">Select Your Child</Label>
+                    <Select value={childId} onValueChange={setChildId}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select child">
+                          {selectedChild ? selectedChild.name : null}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {childOptions.map((child) => (
+                          <SelectItem key={child.id} value={String(child.id)}>
+                            {child.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.childId && <p className="text-xs text-urgent mt-1">{errors.childId}</p>}
+                  </div>
+                )}
 
                 {/* Coordinator-Specific Fields */}
                 {role === 'Coordinator' && (
@@ -245,61 +302,63 @@ const SignupPage: React.FC = () => {
                   </>
                 )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="ngoName" className="text-foreground font-medium">NGO Name</Label>
-                  <div className="relative">
-                    <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Select value={ngoName} onValueChange={setNgoName}>
-                      <SelectTrigger className="pl-10 h-12 text-base">
-                        <SelectValue placeholder="Select your NGO" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ngoOptions.map((ngo) => (
-                          <SelectItem key={ngo} value={ngo}>{ngo}</SelectItem>
-                        ))}
-                        <SelectItem value="__other__">Other (not listed)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {ngoName === '__other__' && (
-                    <div className="mt-2">
-                      <Input
-                        id="ngoNameOther"
-                        placeholder="Type your NGO Name"
-                        value={customNgo}
-                        onChange={(e) => setCustomNgo(e.target.value)}
-                        className="h-12 text-base"
-                      />
-                    </div>
-                  )}
-                  {ngoName === '__other__' && (
-                    <div className="mt-2 space-y-2">
-                       <Label className="text-foreground font-medium">NGO Type</Label>
-                       <Select value={ngoType} onValueChange={setNgoType}>
-                        <SelectTrigger className="h-12">
-                          <SelectValue placeholder="Select type" />
+                {role !== 'Parent' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="ngoName" className="text-foreground font-medium">NGO Name</Label>
+                    <div className="relative">
+                      <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Select value={ngoName} onValueChange={setNgoName}>
+                        <SelectTrigger className="pl-10 h-12 text-base">
+                          <SelectValue placeholder="Select your NGO" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="residential">Residential</SelectItem>
-                          <SelectItem value="non-residential">Non-Residential</SelectItem>
+                          {ngoOptions.map((ngo) => (
+                            <SelectItem key={ngo} value={ngo}>{ngo}</SelectItem>
+                          ))}
+                          <SelectItem value="__other__">Other (not listed)</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    {ngoName === '__other__' && (
+                      <div className="mt-2">
+                        <Input
+                          id="ngoNameOther"
+                          placeholder="Type your NGO Name"
+                          value={customNgo}
+                          onChange={(e) => setCustomNgo(e.target.value)}
+                          className="h-12 text-base"
+                        />
+                      </div>
+                    )}
+                    {ngoName === '__other__' && (
+                      <div className="mt-2 space-y-2">
+                        <Label className="text-foreground font-medium">NGO Type</Label>
+                        <Select value={ngoType} onValueChange={setNgoType}>
+                          <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="residential">Residential</SelectItem>
+                            <SelectItem value="non-residential">Non-Residential</SelectItem>
+                          </SelectContent>
+                        </Select>
 
-                      {ngoType === 'non-residential' && (
-                        <div className="space-y-2">
-                           <Label className="text-foreground font-medium">NGO Address</Label>
-                           <Input 
-                              placeholder="Enter NGO Address" 
-                              value={ngoAddress} 
+                        {ngoType === 'non-residential' && (
+                          <div className="space-y-2">
+                            <Label className="text-foreground font-medium">NGO Address</Label>
+                            <Input
+                              placeholder="Enter NGO Address"
+                              value={ngoAddress}
                               onChange={(e) => setNgoAddress(e.target.value)}
                               className="h-12 text-base"
-                           />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {errors.ngoName && <p className="text-xs text-urgent mt-1">{errors.ngoName}</p>}
-                </div>
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {errors.ngoName && <p className="text-xs text-urgent mt-1">{errors.ngoName}</p>}
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-foreground font-medium">Password</Label>

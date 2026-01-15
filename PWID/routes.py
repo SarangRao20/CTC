@@ -2,7 +2,7 @@ from flask import jsonify, request, Blueprint
 from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, PWID, Caretaker, Routinelog, Task, Event, NGO, Guardian, TrackingLog
+from models import db, PWID, Caretaker, Routinelog, Task, Event, NGO, Parent, TrackingLog
 from flasgger import swag_from 
 from risk_engine import calculate_single_risk, calculate_trend_risk
 from services.observe_engine import process_observation
@@ -746,41 +746,51 @@ def voice_transcribe():
              return jsonify(result), 500
              
 
-@routes_bp.route('/guardian/register', methods=['POST'])
-def register_guardian():
+@routes_bp.route('/parent/register', methods=['POST'])
+def register_parent():
     data = request.get_json()
     if not all(k in data for k in ('name', 'email', 'password', 'pwid_id')):
         return jsonify({'error': 'Missing fields'}), 400
     
-    if Guardian.query.filter_by(email=data['email']).first():
+    if Parent.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Email already exists'}), 400
     
     hashed_password = generate_password_hash(data['password'])
-    guardian = Guardian(
+    parent = Parent(
         name=data['name'],
         email=data['email'],
         password_hash=hashed_password,
         pwid_id=data['pwid_id'],
         created_at=datetime.utcnow()
     )
-    db.session.add(guardian)
+    db.session.add(parent)
     db.session.commit()
 
-    return jsonify({'message': 'Guardian registered successfully'}), 201
+    return jsonify({
+        'message': 'Parent registered successfully',
+        'parent': {
+            'id': parent.id,
+            'name': parent.name,
+            'email': parent.email,
+            'pwid_id': parent.pwid_id,
+            'role': 'Parent'
+        }
+    }), 201
 
-@routes_bp.route('/guardian/login', methods=['POST'])
-def login_guardian():
+@routes_bp.route('/parent/login', methods=['POST'])
+def login_parent():
     data = request.get_json()
-    guardian = Guardian.query.filter_by(email=data.get('email')).first()
+    parent = Parent.query.filter_by(email=data.get('email')).first()
     
-    if guardian and check_password_hash(guardian.password_hash, data.get('password')):
+    if parent and check_password_hash(parent.password_hash, data.get('password')):
         return jsonify({
             'message': 'Login successful',
-            'guardian': {
-                'id': guardian.id,
-                'name': guardian.name,
-                'email': guardian.email,
-                'pwid_id': guardian.pwid_id
+            'parent': {
+                'id': parent.id,
+                'name': parent.name,
+                'email': parent.email,
+                'pwid_id': parent.pwid_id,
+                'role': 'Parent'
             }
         }), 200
     

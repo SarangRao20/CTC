@@ -30,19 +30,31 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // App routes with auth check
 const AppRoutes = () => {
-  const { isAuthenticated } = useApp();
+  const { isAuthenticated, caregiver } = useApp();
+
+  // Determine dashboard based on role
+  const dashboardPath = caregiver?.role === 'Parent' ? '/parent/dashboard' : '/dashboard';
 
   return (
     <Routes>
       <Route
         path="/"
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+        element={isAuthenticated ? <Navigate to={dashboardPath} replace /> : <LoginPage />}
       />
       <Route
         path="/signup"
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <SignupPage />}
+        element={isAuthenticated ? <Navigate to={dashboardPath} replace /> : <SignupPage />}
       />
-      <Route path="/parent/dashboard" element={<ParentDashboard />} />
+
+      {/* Protected Parent Route (No Layout) */}
+      <Route
+        path="/parent/dashboard"
+        element={
+          <ProtectedRoute>
+            <ParentDashboard />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected Routes wrapped in Layer */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

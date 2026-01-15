@@ -27,7 +27,7 @@ class PWID(db.Model):
     home_address = db.Column(db.String(255)) # New field for non-residential
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class Guardian(db.Model):
+class Parent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)

@@ -8,6 +8,7 @@ interface Caretaker {
   email: string;
   role: string;
   ngo_name?: string;
+  pwid_id?: string | number;
 }
 
 interface AppState {

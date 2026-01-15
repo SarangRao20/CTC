@@ -18,7 +18,8 @@ import {
   FileText,
   Mic,
   Camera,
-  Calendar
+  Calendar,
+  Trash2
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
@@ -35,7 +36,7 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
   events,
   onViewProgress,
 }) => {
-  const { completeTask, addEvent } = useApp();
+  const { completeTask, deleteTask, addEvent } = useApp();
   const { toast } = useToast();
   const [observationResult, setObservationResult] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -229,6 +230,16 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
                     <CheckCircle2 className="w-4 h-4" />
                     <span className="sr-only">Complete task</span>
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mr-2"
+                    onClick={() => {
+                      if (confirm('Delete this task?')) deleteTask(task.id);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               ))
             )}
@@ -268,14 +279,14 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
             )}
           </div>
         </section>
-      </div>
+      </div >
 
       <ObservationResultModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         data={observationResult}
       />
-    </div>
+    </div >
   );
 };
 

@@ -46,6 +46,9 @@ const Dashboard = () => {
         (supportFilter === 'low' && patient.supportLevel === 'low-support');
 
       return matchesSearch && matchesAge && matchesSupport;
+    }).sort((a, b) => {
+      const priority = { 'urgent': 0, 'needs-attention': 1, 'stable': 2 };
+      return (priority[a.status] ?? 2) - (priority[b.status] ?? 2);
     });
   }, [patients, searchQuery, ageFilter, supportFilter]);
 
@@ -147,7 +150,7 @@ const Dashboard = () => {
       )}
 
       {/* Care Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredPatients.map(patient => (
           <CareCard
             key={patient.id}

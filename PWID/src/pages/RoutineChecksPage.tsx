@@ -12,14 +12,15 @@ import {
   Droplets,
   Stethoscope,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Task } from '@/data/mockData';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const RoutineChecksPage = () => {
-  const { tasks, patients, completeTask, caregiver } = useApp();
+  const { tasks, patients, completeTask, deleteTask, caregiver } = useApp();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const patientIdFilter = searchParams.get('patientId');
@@ -111,8 +112,21 @@ const RoutineChecksPage = () => {
             <CheckCircle2 className="w-5 h-5" />
           </Button>
         )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            if (confirm('Are you sure you want to delete this task?')) {
+              deleteTask(task.id);
+            }
+          }}
+          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+          title="Delete Task"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
       </div>
-    </article>
+    </article >
   );
 
   return (

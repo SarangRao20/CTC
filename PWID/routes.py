@@ -667,6 +667,13 @@ def complete_task(task_id):
     db.session.commit()
     return jsonify({'message': 'Task marked as complete'})
 
+@routes_bp.route('/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({'message': 'Task deleted successfully'}), 200
+
 @routes_bp.route('/logs/<int:log_id>', methods=['PATCH'])
 def update_log(log_id):
     log = Routinelog.query.get_or_404(log_id)

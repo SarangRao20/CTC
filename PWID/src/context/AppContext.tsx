@@ -36,6 +36,7 @@ interface AppContextType extends AppState {
   getPatientTasks: (patientId: string | number) => Task[];
   getPatientEvents: (patientId: string | number) => HistoryEvent[];
   refreshData: () => Promise<void>;
+  deleteTask: (taskId: string | number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -158,6 +159,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const deleteTask = async (taskId: string | number) => {
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      setState(prev => ({
+        ...prev,
+        tasks: prev.tasks.filter(t => t.id !== taskId)
+      }));
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+    }
+  };
+
   const addEvent = async (eventData: Omit<HistoryEvent, 'id' | 'timestamp' | 'caregiverId' | 'caregiverName'> & { patientId: string | number }) => {
     try {
       const payload = {
@@ -213,6 +226,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getPatientTasks,
         getPatientEvents,
         refreshData,
+        deleteTask,
       }}
     >
       {children}

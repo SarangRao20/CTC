@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Clock, Utensils, Moon, Activity, AlertTriangle, ArrowRight } from 'lucide-react';
@@ -23,6 +24,7 @@ interface TodaysStatusProps {
 }
 
 const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
+    const { t } = useTranslation();
     // Get latest log for today
     const todayLogs = logs.filter(log => {
         const logDate = new Date(log.created_at);
@@ -60,7 +62,7 @@ const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
         return {
             color: isGood ? 'bg-success/10 text-success border-success/20' : isBad ? 'bg-urgent/10 text-urgent border-urgent/20' : 'bg-secondary text-secondary-foreground',
             dot: isGood ? 'bg-success' : isBad ? 'bg-urgent' : 'bg-secondary-foreground',
-            label: value || 'Not Recorded'
+            label: value ? t(value.toLowerCase()) : t('not_recorded')
         };
     };
 
@@ -69,8 +71,8 @@ const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
             <Card className="border-dashed">
                 <CardContent className="flex flex-col items-center justify-center p-8 text-center">
                     <Clock className="w-10 h-10 text-muted-foreground mb-3 opacity-50" />
-                    <h3 className="font-semibold text-lg">No logs for today</h3>
-                    <p className="text-muted-foreground text-sm mb-4">Start your routine check for {patientName}.</p>
+                    <h3 className="font-semibold text-lg">{t('no_logs_today')}</h3>
+                    <p className="text-muted-foreground text-sm mb-4">{t('start_routine_check_desc', { name: patientName })}</p>
                 </CardContent>
             </Card>
         );
@@ -83,18 +85,18 @@ const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
     // AI-driven simple suggestion
     const getSuggestion = () => {
         if (latestLog.mood === 'Anxious' || latestLog.sleep_quality === 'Poor')
-            return "Encourage rest and extensive calm supervision.";
+            return t('suggestion_calm');
         if (latestLog.meals === 'Skipped')
-            return "Observe appetite closely during next meal.";
+            return t('suggestion_appetite');
         if (latestLog.incident !== 'None' && latestLog.incident !== 'no')
-            return "Monitor regarding reported incident.";
-        return "Routine is stable. Continue standard care.";
+            return t('suggestion_incident');
+        return t('suggestion_stable');
     };
 
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold flex items-center gap-2">
-                Today's Status <span className="text-sm font-normal text-muted-foreground">({format(new Date(), 'EEEE, MMM d')})</span>
+                {t('todays_status')} <span className="text-sm font-normal text-muted-foreground">({format(new Date(), 'EEEE, MMM d')})</span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -102,7 +104,7 @@ const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
                 <Card className={`border ${moodStatus.color}`}>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
-                            <Activity className="w-4 h-4" /> Mood
+                            <Activity className="w-4 h-4" /> {t('mood')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -117,7 +119,7 @@ const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
                 <Card className={`border ${sleepStatus.color}`}>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
-                            <Moon className="w-4 h-4" /> Sleep
+                            <Moon className="w-4 h-4" /> {t('sleep')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -132,7 +134,7 @@ const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
                 <Card className={`border ${mealStatus.color}`}>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
-                            <Utensils className="w-4 h-4" /> Meals
+                            <Utensils className="w-4 h-4" /> {t('meals')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -151,7 +153,7 @@ const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
                         <CheckCircle2 className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h4 className="font-semibold text-primary mb-1">Suggested Attention</h4>
+                        <h4 className="font-semibold text-primary mb-1">{t('suggested_attention')}</h4>
                         <p className="text-sm text-foreground/90 font-medium">
                             "{getSuggestion()}"
                         </p>

@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 
 const UserGuide: React.FC = () => {
+    const { t } = useTranslation();
+
     useEffect(() => {
         // Check if the tour has already been shown in this session
         const hasSeenTour = sessionStorage.getItem('hasSeenUserGuide');
@@ -15,8 +18,8 @@ const UserGuide: React.FC = () => {
                     {
                         element: '#dashboard-welcome',
                         popover: {
-                            title: 'Welcome to CareConnect!',
-                            description: 'This is your central command center. Here you can track patient status, view alerts, and manage your daily tasks.',
+                            title: t('tour_welcome_title'),
+                            description: t('tour_welcome_desc'),
                             side: "bottom",
                             align: 'start'
                         }
@@ -24,8 +27,8 @@ const UserGuide: React.FC = () => {
                     {
                         element: '#tour-stats',
                         popover: {
-                            title: 'Daily Overview',
-                            description: 'Get a quick summary of urgent alerts, pending tasks, and patient wellness scores at a glance.',
+                            title: t('tour_stats_title'),
+                            description: t('tour_stats_desc'),
                             side: "bottom",
                             align: 'start'
                         }
@@ -33,8 +36,8 @@ const UserGuide: React.FC = () => {
                     {
                         element: '#tour-search',
                         popover: {
-                            title: 'Search Residents',
-                            description: 'Quickly find a specific resident by name or room number.',
+                            title: t('tour_search_title'),
+                            description: t('tour_search_desc'),
                             side: "bottom",
                             align: 'start'
                         }
@@ -42,8 +45,8 @@ const UserGuide: React.FC = () => {
                     {
                         element: '#tour-filters',
                         popover: {
-                            title: 'Filter Views',
-                            description: 'Focus solely on children, adults, or high-support patients to better prioritize your rounds.',
+                            title: t('tour_filter_title'),
+                            description: t('tour_filter_desc'),
                             side: "left",
                             align: 'start'
                         }
@@ -51,8 +54,8 @@ const UserGuide: React.FC = () => {
                     {
                         element: '#tour-care-cards',
                         popover: {
-                            title: 'Resident Cards',
-                            description: 'Each card represents a resident. Click "View Progress" to see detailed logs, history, and AI-driven insights.',
+                            title: t('tour_card_title'),
+                            description: t('tour_card_desc'),
                             side: "top",
                             align: 'start'
                         }
@@ -60,8 +63,8 @@ const UserGuide: React.FC = () => {
                     {
                         element: '#tour-notifications',
                         popover: {
-                            title: 'Notifications',
-                            description: 'Check here for real-time alerts about critical events or overdue tasks.',
+                            title: t('tour_notif_title'),
+                            description: t('tour_notif_desc'),
                             side: "bottom",
                             align: 'end'
                         }
@@ -69,8 +72,8 @@ const UserGuide: React.FC = () => {
                     {
                         element: '#tour-profile',
                         popover: {
-                            title: 'Your Profile',
-                            description: 'Access settings, switch NGOs, or log out from here.',
+                            title: t('tour_profile_title'),
+                            description: t('tour_profile_desc'),
                             side: "bottom",
                             align: 'end'
                         }
@@ -91,7 +94,7 @@ const UserGuide: React.FC = () => {
                 driverObj.drive();
             }, 1000);
         }
-    }, []);
+    }, [t]);
 
     return null; // This component handles side effects only (the tour)
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import { Outlet } from 'react-router-dom';
@@ -25,13 +24,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }, [isDark]);
 
     return (
-<<<<<<< HEAD
-        <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-            <Header isDark={isDark} toggleTheme={() => setIsDark(!isDark)} />
-            {children || (
-                <main className="flex-1 w-full max-w-screen-2xl mx-auto p-4 md:p-6 pb-20 md:pb-6">
-                    <Outlet />
-=======
         <div className="min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col w-full overflow-x-hidden">
             <Header isDark={isDark} toggleTheme={() => setIsDark(!isDark)} />
             {children || (
@@ -39,7 +31,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <div className="w-full max-w-7xl mx-auto">
                         <Outlet />
                     </div>
->>>>>>> origin/frontend
                 </main>
             )}
         </div>

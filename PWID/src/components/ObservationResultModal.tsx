@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, AlertTriangle, Activity, HelpCircle } from 'lucide-react';
@@ -30,6 +31,7 @@ interface ObservationModalProps {
 }
 
 const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClose, data }) => {
+    const { t } = useTranslation();
     const { toast } = useToast();
     const [localData, setLocalData] = useState<ObservationResult | null>(null);
 
@@ -56,14 +58,14 @@ const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClo
                 }
             }) : null);
 
-            toast({ title: "Updated", description: `${field} updated to ${value}` });
+            toast({ title: t('success'), description: `${t(field)} ${t('updated_to')} ${t(value.toLowerCase())}` });
         } catch (error) {
-            toast({ title: "Error", description: "Failed to update log", variant: "destructive" });
+            toast({ title: t('error'), description: t('failed_update_log'), variant: "destructive" });
         }
     };
 
     const renderMissingPrompt = (field: 'mood' | 'sleep' | 'meals', currentValue: string) => {
-        if (currentValue !== 'Unknown') return null;
+        if (currentValue.toLowerCase() !== 'unknown') return null;
 
         const options = {
             mood: ['Happy', 'Calm', 'Sad', 'Anxious'],
@@ -75,7 +77,7 @@ const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClo
             <div className="mt-2 p-3 bg-warning-light/20 border border-warning/30 rounded-lg animate-fade-in">
                 <div className="flex items-center gap-2 mb-2">
                     <HelpCircle className="w-4 h-4 text-warning" />
-                    <span className="text-sm font-medium text-warning-dark">How was {field}?</span>
+                    <span className="text-sm font-medium text-warning-dark">{t('how_was')} {t(field)}?</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {options[field].map(opt => (
@@ -86,7 +88,7 @@ const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClo
                             className="h-7 text-xs bg-background hover:bg-primary hover:text-primary-foreground"
                             onClick={() => handleUpdateField(field, opt)}
                         >
-                            {opt}
+                            {t(opt.toLowerCase())}
                         </Button>
                     ))}
                 </div>
@@ -111,8 +113,8 @@ const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClo
                                 </div>
                             )}
                             <div>
-                                <h2 className="text-xl font-bold tracking-tight">Observation Logged</h2>
-                                <p className="text-sm text-muted-foreground">Successfully analyzed and saved</p>
+                                <h2 className="text-xl font-bold tracking-tight">{t('observation_logged')}</h2>
+                                <p className="text-sm text-muted-foreground">{t('obs_saved_desc')}</p>
                             </div>
                         </div>
                     </div>
@@ -124,9 +126,9 @@ const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClo
                                 'bg-secondary/50 border-border'
                             }`}>
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-semibold text-sm">Risk Assessment</span>
+                                <span className="font-semibold text-sm">{t('risk_assessment')}</span>
                                 <Badge variant={isHighRisk ? 'urgent' : isMediumRisk ? 'needs-attention' : 'stable'}>
-                                    {risk.risk_level} Risk
+                                    {t(risk.risk_level.toLowerCase())} {t('risk')}
                                 </Badge>
                             </div>
                             <p className="text-sm opacity-90">{risk.reason}</p>
@@ -137,8 +139,8 @@ const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClo
                             {/* Mood */}
                             <div className="p-3 bg-secondary/30 rounded-lg">
                                 <div className="flex justify-between">
-                                    <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">Mood</span>
-                                    <span className="font-medium text-sm">{obs.mood}</span>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">{t('mood')}</span>
+                                    <span className="font-medium text-sm">{t(obs.mood.toLowerCase())}</span>
                                 </div>
                                 {renderMissingPrompt('mood', obs.mood)}
                             </div>
@@ -146,8 +148,8 @@ const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClo
                             {/* Sleep */}
                             <div className="p-3 bg-secondary/30 rounded-lg">
                                 <div className="flex justify-between">
-                                    <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">Sleep</span>
-                                    <span className="font-medium text-sm">{obs.sleep}</span>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">{t('sleep')}</span>
+                                    <span className="font-medium text-sm">{t(obs.sleep.toLowerCase())}</span>
                                 </div>
                                 {renderMissingPrompt('sleep', obs.sleep)}
                             </div>
@@ -155,16 +157,18 @@ const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClo
                             {/* Meals */}
                             <div className="p-3 bg-secondary/30 rounded-lg">
                                 <div className="flex justify-between">
-                                    <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">Meals</span>
-                                    <span className="font-medium text-sm">{obs.meals}</span>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">{t('meals')}</span>
+                                    <span className="font-medium text-sm">{t(obs.meals.toLowerCase())}</span>
                                 </div>
                                 {renderMissingPrompt('meals', obs.meals)}
                             </div>
 
                             {/* Incident - usually not prompted unless flagged, but we display it */}
                             <div className="p-3 bg-secondary/30 rounded-lg">
-                                <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">Incident</span>
-                                <p className="font-medium text-sm">{obs.incident}</p>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider block mb-1">{t('incident')}</span>
+                                <p className="font-medium text-sm">
+                                    {(obs.incident.toLowerCase() === 'none' || obs.incident.toLowerCase() === 'no') ? t('none') : obs.incident}
+                                </p>
                             </div>
                         </div>
 
@@ -178,7 +182,7 @@ const ObservationResultModal: React.FC<ObservationModalProps> = ({ isOpen, onClo
 
                     <div className="flex justify-end pt-2">
                         <Button onClick={onClose} className="w-full" size="lg">
-                            Done
+                            {t('done')}
                         </Button>
                     </div>
                 </div>

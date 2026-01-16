@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
 import api from '@/services/api';
 
@@ -13,6 +14,7 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({ onTranscription, di
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
@@ -99,12 +101,12 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({ onTranscription, di
     } catch (err) {
       console.error(err);
       toast({
-        title: 'Microphone Error',
-        description: 'Could not access microphone.',
+        title: t('mic_error'),
+        description: t('mic_access_denied'),
         variant: 'destructive'
       });
     }
-  }, [toast]);
+  }, [toast, t]);
 
   const stopListening = useCallback(async () => {
     if (!isListening) return;
@@ -113,7 +115,7 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({ onTranscription, di
     setIsProcessing(true);
 
     try {
-      // Cleanup Audio Nodes
+      // ... same cleanup ...
       if (processorRef.current) {
         processorRef.current.disconnect();
         processorRef.current = null;
@@ -149,7 +151,7 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({ onTranscription, di
 
       if (response.data.text) {
         onTranscription(response.data.text);
-        toast({ title: 'Voice captured', description: 'Transcription complete.' });
+        toast({ title: t('voice_captured'), description: t('transcription_complete') });
       } else if (response.data.error) {
         throw new Error(response.data.error);
       }
@@ -157,14 +159,14 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({ onTranscription, di
     } catch (error) {
       console.error(error);
       toast({
-        title: 'Transcription Failed',
-        description: 'Could not process audio. ' + (error instanceof Error ? error.message : ''),
+        title: t('transcription_failed'),
+        description: t('could_not_process_audio') + ' ' + (error instanceof Error ? error.message : ''),
         variant: 'destructive'
       });
     } finally {
       setIsProcessing(false);
     }
-  }, [isListening, onTranscription, toast]);
+  }, [isListening, onTranscription, toast, t]);
 
   return (
     <Button
@@ -174,10 +176,10 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({ onTranscription, di
       disabled={disabled || isProcessing}
       aria-label={
         isListening
-          ? 'Stop recording voice note'
+          ? t('stop_recording')
           : isProcessing
-            ? 'Processing voice input'
-            : 'Start recording voice note'
+            ? t('processing_voice')
+            : t('start_recording')
       }
       aria-pressed={isListening}
       className="relative"

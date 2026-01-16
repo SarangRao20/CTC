@@ -80,6 +80,15 @@ def transcribe_audio(audio_data):
         text = recognizer.recognize_google(audio, language="hi-IN")
         return {"text": text, "language": "hi-IN"}
     except sr.UnknownValueError:
-        return {"text": "", "error": "Could not understand audio in English or Hindi"}
+        print("Hindi recognition failed, trying Marathi...")
+    except sr.RequestError:
+        return transcribe_with_vosk(audio_data)
+
+    # Strategy 3: Try Marathi
+    try:
+        text = recognizer.recognize_google(audio, language="mr-IN")
+        return {"text": text, "language": "mr-IN"}
+    except sr.UnknownValueError:
+        return {"text": "", "error": "Could not understand audio in English, Hindi, or Marathi"}
     except sr.RequestError:
         return transcribe_with_vosk(audio_data)

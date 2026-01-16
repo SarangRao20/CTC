@@ -1,9 +1,6 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
-=======
-import React, { useEffect, useState } from 'react';
->>>>>>> origin/frontend
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,18 +14,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { Heart, Mail, Lock, User, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import api from '@/services/api';
 
 const SignupPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated } = useApp();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [ngoName, setNgoName] = useState('');
-  const [ngoOptions, setNgoOptions] = useState<string[]>([]);
-  const [customNgo, setCustomNgo] = useState('');
+
+  // NGO State
+  const [ngoName, setNgoName] = useState(''); // For Org: Input Value. For Caregiver: Selected Name
+  const [ngoOptions, setNgoOptions] = useState<{ id: number, name: string, type: string }[]>([]);
   const [ngoType, setNgoType] = useState('residential');
   const [ngoAddress, setNgoAddress] = useState('');
 
@@ -38,7 +38,9 @@ const SignupPage: React.FC = () => {
       setNgoOptions(res.data || []);
     }).catch(() => setNgoOptions([]));
   }, []);
+
   const [role, setRole] = useState('Caregiver');
+
   // For parent role
   const [childId, setChildId] = useState('');
   const [childOptions, setChildOptions] = useState<{ id: string, name: string }[]>([]);
@@ -63,6 +65,7 @@ const SignupPage: React.FC = () => {
       fetchChildren();
     }
   }, [role]);
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -70,17 +73,12 @@ const SignupPage: React.FC = () => {
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
   const [submitting, setSubmitting] = useState(false);
 
-<<<<<<< HEAD
-  // Coordinator-specific fields
-  const [orgSize, setOrgSize] = useState('');
-  const [hasManagementAccess, setHasManagementAccess] = useState(false);
-=======
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      if (role === 'Parent') navigate('/parent/dashboard', { replace: true });
+      else navigate('/dashboard', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
->>>>>>> origin/frontend
+  }, [isAuthenticated, navigate, role]);
 
   const validate = () => {
     const e: { [k: string]: string } = {};
@@ -89,17 +87,14 @@ const SignupPage: React.FC = () => {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email address.';
 
     // Validate NGO selection
-    if (role !== 'Parent') {
+    if (role === 'Caregiver') {
       if (!ngoName || ngoName === '') {
         e.ngoName = 'Please select your NGO.';
-      } else if (ngoName === '__other__' && !customNgo.trim()) {
-        e.ngoName = 'Please enter your NGO name.';
       }
     }
 
-    // Validate Coordinator-specific fields
-    if (role === 'Coordinator' && !orgSize) {
-      e.orgSize = 'Please select organization size.';
+    if (role === 'Organization') {
+      if (!ngoName.trim()) e.ngoName = 'Please enter Organization/NGO Name.';
     }
 
     // Validate Parent-specific fields
@@ -125,7 +120,7 @@ const SignupPage: React.FC = () => {
 
     try {
       if (role === 'Parent') {
-        // Register as parent
+        // ... (parent logic same)
         const response = await api.post('/parent/register', {
           name,
           email,
@@ -133,34 +128,25 @@ const SignupPage: React.FC = () => {
           pwid_id: childId,
         });
         if (response.status === 201) {
-          toast({
-            title: 'Account created',
-            description: 'Your parent profile is ready.',
-          });
-          // Auto-login
+          toast({ title: 'Account created', description: 'Your parent profile is ready.' });
           const parent = { ...response.data.parent, role: 'Parent' };
           login(parent);
           navigate('/parent/dashboard');
         }
       } else {
-        const finalNgoName = ngoName === '__other__' ? customNgo : ngoName;
+        // Caregiver or Organization
         const response = await api.post('/caretaker/register', {
           name,
           email,
           password,
           role,
-          ngo_name: finalNgoName,
-          ngo_type: ngoName === '__other__' ? ngoType : undefined,
-          ngo_address: ngoName === '__other__' ? ngoAddress : undefined,
-          // Coordinator-specific metadata
-          org_size: role === 'Coordinator' ? orgSize : null,
-          management_access: role === 'Coordinator' ? hasManagementAccess : false,
+          ngo_name: ngoName, // Either selected (Caregiver) or Typed (Org)
+          ngo_type: role === 'Organization' ? ngoType : undefined,
+          ngo_address: role === 'Organization' ? ngoAddress : undefined,
         });
+
         if (response.status === 201 && response.data.caretaker) {
-          toast({
-            title: 'Account created',
-            description: 'Your caregiver profile is ready.',
-          });
+          toast({ title: 'Account created', description: `Your ${role} profile is ready.` });
           login(response.data.caretaker);
           await refreshData();
           navigate('/dashboard');
@@ -172,7 +158,6 @@ const SignupPage: React.FC = () => {
         description: err.response?.data?.error || 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
-      console.error('Registration error:', err);
     } finally {
       setSubmitting(false);
     }
@@ -180,51 +165,33 @@ const SignupPage: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex flex-col relative overflow-hidden" role="main" aria-label="Signup page">
-      {/* Ambient blobs */}
+      {/* ... header and blobs same ... */}
       <div className="pointer-events-none absolute inset-0 opacity-60">
         <div className="absolute -left-16 top-10 h-64 w-64 rounded-full bg-primary/15 blur-3xl" />
         <div className="absolute right-0 -top-12 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-info/10 blur-3xl" />
       </div>
 
-      {/* Header */}
       <header className="relative bg-card/80 backdrop-blur border-b border-border/70 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-primary shadow-lg shadow-primary/30 flex items-center justify-center">
             <Heart className="w-6 h-6 text-primary-foreground" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground tracking-tight">CareConnect</h1>
-            <p className="text-sm text-muted-foreground">PWID Care Management</p>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-foreground tracking-tight">{t('app_name')}</h1>
+            <p className="text-sm text-muted-foreground">{t('pwid_care_management')}</p>
           </div>
-          <div className="ml-auto hidden sm:flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <span className="px-3 py-1 rounded-full bg-success-light text-success border border-success/20">Secure Access</span>
-            <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">HIPAA-ready</span>
-          </div>
+          <LanguageSwitcher />
         </div>
       </header>
 
-      {/* Content */}
       <div className="flex-1 flex items-center justify-center p-6 relative z-10">
         <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-8 items-start">
-          {/* Left: Copy */}
           <div className="space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Create your caregiver account</h2>
-            <p className="text-muted-foreground text-lg">Set up your profile to access the caregiver dashboard. You can update your details later in settings.</p>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-secondary/60 border border-border">
-                <ShieldCheck className="w-5 h-5 text-success mb-2" />
-                <p className="text-sm text-foreground font-medium">Data encrypted & privacy-focused</p>
-              </div>
-              <div className="p-4 rounded-xl bg-secondary/60 border border-border">
-                <Heart className="w-5 h-5 text-primary mb-2" />
-                <p className="text-sm text-foreground font-medium">Designed for PWID caregivers</p>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground">Already have an account? <Link to="/" className="text-primary font-medium">Sign in</Link></p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">{t('signup_title')}</h2>
+            <p className="text-muted-foreground text-lg">{t('signup_subtitle')}</p>
           </div>
 
-          {/* Right: Signup Card */}
           <div className="w-full max-w-lg ml-auto">
             <div className="bg-card/95 backdrop-blur rounded-2xl border border-border shadow-2xl p-8">
               <div className="flex items-center gap-3 mb-6">
@@ -232,204 +199,116 @@ const SignupPage: React.FC = () => {
                   <User className="w-7 h-7 text-primary-foreground" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">Sign up</h2>
-                  <p className="text-sm text-muted-foreground">Start your caregiver journey</p>
+                  <h2 className="text-2xl font-bold text-foreground">{t('create_account')}</h2>
+                  <p className="text-sm text-muted-foreground">{t('start_journey')}</p>
                 </div>
               </div>
 
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-foreground font-medium">Full name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input id="name" placeholder="Alex Morgan" value={name} onChange={(e) => setName(e.target.value)} className="pl-10 h-12 text-base" />
-                  </div>
-                  {errors.name && <p className="text-xs text-urgent mt-1">{errors.name}</p>}
+                  <Label htmlFor="name" className="text-foreground font-medium">{t('full_name')}</Label>
+                  <Input id="name" placeholder="Alex Morgan" value={name} onChange={(e) => setName(e.target.value)} className="h-12" />
+                  {errors.name && <p className="text-xs text-urgent mt-1">{t('enter_full_name')}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground font-medium">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input id="email" type="email" placeholder="caregiver@careconnect.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-12 text-base" autoComplete="email" />
-                  </div>
-                  {errors.email && <p className="text-xs text-urgent mt-1">{errors.email}</p>}
+                  <Label htmlFor="email" className="text-foreground font-medium">{t('email')}</Label>
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12" />
+                  {errors.email && <p className="text-xs text-urgent mt-1">{errors.email === 'Please enter your email.' ? t('enter_email') : t('invalid_email')}</p>}
                 </div>
 
-
                 <div className="space-y-2">
-                  <Label className="text-foreground font-medium">Role</Label>
+                  <Label className="text-foreground font-medium">{t('role')}</Label>
                   <Select value={role} onValueChange={setRole}>
                     <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Select role" />
+                      <SelectValue placeholder={t('role')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Caregiver" key="caregiver">Caregiver</SelectItem>
-                      <SelectItem value="Parent" key="parent">Parent</SelectItem>
+                      <SelectItem value="Caregiver">{t('caregiver')}</SelectItem>
+                      <SelectItem value="Organization">{t('org_admin')}</SelectItem>
+                      <SelectItem value="Parent">{t('parent')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Parent-Specific Fields */}
-                {role === 'Parent' && (
+                {role === 'Caregiver' && (
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label className="text-foreground font-medium">Select Your Child</Label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs text-primary"
-                        onClick={fetchChildren}
-                        disabled={loadingChildren}
-                      >
-                        {loadingChildren ? 'Loading...' : 'Refresh List'}
-                      </Button>
-                    </div>
-                    <Select value={childId} onValueChange={setChildId} disabled={loadingChildren}>
+                    <Label className="text-foreground font-medium">{t('select_ngo')}</Label>
+                    <Select value={ngoName} onValueChange={setNgoName}>
                       <SelectTrigger className="h-12">
-                        <SelectValue placeholder={loadingChildren ? "Loading children..." : "Select child"}>
-                          {selectedChild ? selectedChild.name : null}
-                        </SelectValue>
+                        <SelectValue placeholder={t('select_ngo')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {childOptions.length === 0 && !loadingChildren && (
-                          <div className="p-2 text-sm text-muted-foreground text-center">No children found</div>
-                        )}
-                        {childOptions.map((child) => (
-                          <SelectItem key={child.id} value={String(child.id)}>
-                            {child.name}
-                          </SelectItem>
+                        {ngoOptions.map((ngo) => (
+                          <SelectItem key={ngo.id} value={ngo.name}>{ngo.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.childId && <p className="text-xs text-urgent mt-1">{errors.childId}</p>}
+                    {errors.ngoName && <p className="text-xs text-urgent mt-1">{t('select_your_ngo')}</p>}
                   </div>
                 )}
 
-                {/* Coordinator-Specific Fields */}
-                {role === 'Coordinator' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="orgSize" className="text-foreground font-medium">Organization Size *</Label>
-                      <Select value={orgSize} onValueChange={setOrgSize}>
-                        <SelectTrigger id="orgSize" className="h-12">
-                          <SelectValue placeholder="Select organization size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="small">Small (&lt;10 patients)</SelectItem>
-                          <SelectItem value="medium">Medium (10-50 patients)</SelectItem>
-                          <SelectItem value="large">Large (&gt;50 patients)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {errors.orgSize && <p className="text-xs text-urgent mt-1">{errors.orgSize}</p>}
-                    </div>
-
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/20">
-                      <Checkbox
-                        id="managementAccess"
-                        checked={hasManagementAccess}
-                        onCheckedChange={(v) => setHasManagementAccess(Boolean(v))}
-                      />
-                      <Label htmlFor="managementAccess" className="text-sm text-foreground cursor-pointer">
-                        Grant management access (view all patients, manage caregivers, export reports)
-                      </Label>
-                    </div>
-                  </>
+                {role === 'Organization' && (
+                  <div className="space-y-2">
+                    <Label className="text-foreground font-medium">{t('org_ngo_name')}</Label>
+                    <Input
+                      placeholder={t('enter_org_name')}
+                      value={ngoName}
+                      onChange={(e) => setNgoName(e.target.value)}
+                      className="h-12"
+                    />
+                    <div className="mt-2 text-xs text-muted-foreground">{t('org_creation_hint')}</div>
+                    {errors.ngoName && <p className="text-xs text-urgent mt-1">{t('enter_org_name_error')}</p>}
+                  </div>
                 )}
 
-                {role !== 'Parent' && (
+                {role === 'Parent' && (
                   <div className="space-y-2">
-                    <Label htmlFor="ngoName" className="text-foreground font-medium">NGO Name</Label>
-                    <div className="relative">
-                      <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <Select value={ngoName} onValueChange={setNgoName}>
-                        <SelectTrigger className="pl-10 h-12 text-base">
-                          <SelectValue placeholder="Select your NGO" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ngoOptions.map((ngo) => (
-                            <SelectItem key={ngo} value={ngo}>{ngo}</SelectItem>
-                          ))}
-                          <SelectItem value="__other__">Other (not listed)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {ngoName === '__other__' && (
-                      <div className="mt-2">
-                        <Input
-                          id="ngoNameOther"
-                          placeholder="Type your NGO Name"
-                          value={customNgo}
-                          onChange={(e) => setCustomNgo(e.target.value)}
-                          className="h-12 text-base"
-                        />
-                      </div>
-                    )}
-                    {ngoName === '__other__' && (
-                      <div className="mt-2 space-y-2">
-                        <Label className="text-foreground font-medium">NGO Type</Label>
-                        <Select value={ngoType} onValueChange={setNgoType}>
-                          <SelectTrigger className="h-12">
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="residential">Residential</SelectItem>
-                            <SelectItem value="non-residential">Non-Residential</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        {ngoType === 'non-residential' && (
-                          <div className="space-y-2">
-                            <Label className="text-foreground font-medium">NGO Address</Label>
-                            <Input
-                              placeholder="Enter NGO Address"
-                              value={ngoAddress}
-                              onChange={(e) => setNgoAddress(e.target.value)}
-                              className="h-12 text-base"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {errors.ngoName && <p className="text-xs text-urgent mt-1">{errors.ngoName}</p>}
+                    <Label className="text-foreground font-medium">{t('select_child')}</Label>
+                    <Select value={childId} onValueChange={setChildId}>
+                      <SelectTrigger className="h-12"><SelectValue placeholder={t('select_child')} /></SelectTrigger>
+                      <SelectContent>
+                        {childOptions.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {errors.childId && <p className="text-xs text-urgent mt-1">{t('select_child_error')}</p>}
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-foreground font-medium">Password</Label>
+                  <Label htmlFor="password" className="text-foreground font-medium">{t('password')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10 pr-10 h-12 text-base" autoComplete="new-password" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder={t('password')} value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10 pr-10 h-12 text-base" autoComplete="new-password" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label={showPassword ? t('hide_password') : t('show_password')}>
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-xs text-urgent mt-1">{errors.password}</p>}
+                  {errors.password && <p className="text-xs text-urgent mt-1">{errors.password === 'Create a password.' ? t('create_password_error') : t('min_password_length')}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-foreground font-medium">Confirm password</Label>
+                  <Label htmlFor="confirmPassword" className="text-foreground font-medium">{t('confirm_password')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} placeholder="Re-enter password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10 h-12 text-base" autoComplete="new-password" />
+                    <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} placeholder={t('confirm_password')} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="pl-10 h-12 text-base" autoComplete="new-password" />
                   </div>
-                  {errors.confirmPassword && <p className="text-xs text-urgent mt-1">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && <p className="text-xs text-urgent mt-1">{errors.confirmPassword === 'Confirm your password.' ? t('confirm_password_error') : t('passwords_mismatch')}</p>}
                 </div>
 
                 <div className="flex items-start gap-3">
                   <Checkbox id="accept" checked={accept} onCheckedChange={(v) => setAccept(Boolean(v))} />
                   <Label htmlFor="accept" className="text-sm text-muted-foreground">
-                    I agree to the <span className="text-primary">Terms</span> and <span className="text-primary">Privacy Policy</span>.
+                    {t('agree_to_terms')} <span className="text-primary">{t('privacy_policy')}</span>.
                   </Label>
                 </div>
-                {errors.accept && <p className="text-xs text-urgent -mt-2">{errors.accept}</p>}
+                {errors.accept && <p className="text-xs text-urgent -mt-2">{t('accept_terms_error')}</p>}
 
                 <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={submitting}>
-                  {submitting ? 'Creating account...' : 'Create account'}
+                  {submitting ? t('signing_up') : t('create_account')}
                 </Button>
 
-                <p className="text-center text-sm text-muted-foreground">Already registered? <Link to="/" className="text-primary font-medium">Sign in</Link></p>
+                <p className="text-center text-sm text-muted-foreground">{t('already_have_account')} <Link to="/" className="text-primary font-medium">{t('login')}</Link></p>
               </form>
             </div>
           </div>

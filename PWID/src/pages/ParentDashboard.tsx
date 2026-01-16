@@ -11,6 +11,7 @@ import {
     Activity, Moon, Utensils, Smile, Calendar, Phone
 } from 'lucide-react';
 import ParentUserGuide from '@/components/ParentUserGuide';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface TrackingStatus {
     status: 'in_transit' | 'arrived' | 'overdue' | 'no_record';
@@ -99,6 +100,7 @@ const ParentDashboard: React.FC = () => {
                         <p className="text-slate-500">Monitoring <span className="font-semibold text-primary">{childInfo?.full_name}</span></p>
                     </div>
                     <div className="flex gap-2">
+                        <LanguageSwitcher />
                         <Button variant="outline" className="gap-2">
                             <Phone className="w-4 h-4" /> Contact NGO
                         </Button>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,8 +8,10 @@ import { Label } from '@/components/ui/label';
 import { getDashboardStats } from '@/data/mockData';
 import { Search, Users, X, Activity, Heart, Mail, Lock, Eye, EyeOff, AlertCircle, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
 import api from '@/services/api';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const LoginPage = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { login, caregiver, stats } = useApp();
 
@@ -31,8 +34,14 @@ const LoginPage = () => {
       // Try Caretaker login first
       const response = await api.post('/caretaker/login', { email, password });
       if (response.status === 200) {
-        login(response.data.caretaker);
-        navigate('/dashboard');
+        const user = response.data.caretaker;
+        login(user);
+
+        if (user.role && user.role.toLowerCase() === 'organization') {
+          navigate('/ngo');
+        } else {
+          navigate('/dashboard');
+        }
         return; // Exit on success
       }
     } catch (err: any) {
@@ -80,12 +89,17 @@ const LoginPage = () => {
             <Heart className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground tracking-tight">SaharaAI</h1>
-            <p className="text-sm text-muted-foreground">PWID Care Management</p>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">{t('app_name')}</h1>
+            <p className="text-sm text-muted-foreground">{t('pwid_care_management')}</p>
           </div>
           <div className="ml-auto hidden sm:flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <span className="px-3 py-1 rounded-full bg-success-light text-success border border-success/20">Secure Access</span>
-            <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">HIPAA-ready</span>
+            <span className="px-3 py-1 rounded-full bg-success-light text-success border border-success/20">{t('secure_access')}</span>
+            <LanguageSwitcher />
+            <span className="px-3 py-1 rounded-full bg-primary-light text-primary border border-primary/20">{t('hipaa_ready')}</span>
+          </div>
+          {/* Mobile language switcher */}
+          <div className="ml-auto sm:hidden">
+            <LanguageSwitcher />
           </div>
         </div>
       </header>
@@ -97,10 +111,10 @@ const LoginPage = () => {
           <div className="space-y-4 sm:space-y-6 md:space-y-8">
             <div className="text-left lg:text-left">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                Welcome back, {caregiver?.name || 'Caregiver'}
+                {t('welcome')}, {caregiver?.name || t('caregiver')}
               </h2>
               <p className="text-lg text-muted-foreground">
-                {caregiver?.role || 'Guest'} • {new Date().toLocaleDateString('en-US', {
+                {caregiver?.role || t('guest')} • {new Date().toLocaleDateString(i18n.language === 'en' ? 'en-US' : (i18n.language === 'hi' ? 'hi-IN' : 'mr-IN'), {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
@@ -118,7 +132,7 @@ const LoginPage = () => {
               <article className="stat-card">
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                   <span className="text-muted-foreground text-xs sm:text-sm font-medium">
-                    Assigned Patients
+                    {t('assigned_patients')}
                   </span>
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-info-light flex items-center justify-center">
                     <Users className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
@@ -130,7 +144,7 @@ const LoginPage = () => {
               <article className="stat-card">
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                   <span className="text-muted-foreground text-xs sm:text-sm font-medium">
-                    Urgent Alerts
+                    {t('alerts')}
                   </span>
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-urgent-light flex items-center justify-center">
                     <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-urgent" />
@@ -142,7 +156,7 @@ const LoginPage = () => {
               <article className="stat-card">
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                   <span className="text-muted-foreground text-xs sm:text-sm font-medium">
-                    Overdue Tasks
+                    {t('overdue_tasks')}
                   </span>
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-warning-light flex items-center justify-center">
                     <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
@@ -154,7 +168,7 @@ const LoginPage = () => {
               <article className="stat-card">
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                   <span className="text-muted-foreground text-xs sm:text-sm font-medium">
-                    Completed Today
+                    {t('completed_today')}
                   </span>
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-success-light flex items-center justify-center">
                     <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
@@ -168,19 +182,19 @@ const LoginPage = () => {
             <div className="bg-card/90 backdrop-blur rounded-2xl border border-border shadow-lg p-3 sm:p-4 md:p-6">
               <div className="flex items-center gap-2 mb-2 sm:mb-3 md:mb-4">
                 <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                <h3 className="text-base sm:text-lg font-semibold text-foreground">Quick Status</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-foreground">{t('quick_status')}</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
                 <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-secondary/50 rounded-xl">
                   <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-urgent animate-pulse flex-shrink-0" />
                   <span className="text-xs sm:text-sm text-foreground">
-                    <strong>{stats.urgentAlerts} patient{stats.urgentAlerts !== 1 ? 's' : ''}</strong> need{stats.urgentAlerts === 1 ? 's' : ''} immediate attention
+                    <strong>{stats.urgentAlerts} {t('patients').toLowerCase()}</strong> {t('needs_attention')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-secondary/50 rounded-xl">
                   <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-warning flex-shrink-0" />
                   <span className="text-xs sm:text-sm text-foreground">
-                    <strong>{stats.pendingTasks} routine task{stats.pendingTasks !== 1 ? 's' : ''}</strong> scheduled for today
+                    <strong>{stats.pendingTasks} {t('tasks').toLowerCase()}</strong> {t('scheduled')}
                   </span>
                 </div>
               </div>
@@ -195,8 +209,8 @@ const LoginPage = () => {
                   <Heart className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
                 </div>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">Sign in</h2>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Access your caregiver dashboard</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">{t('login_title')}</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{t('login_subtitle')}</p>
                 </div>
               </div>
 
@@ -209,7 +223,7 @@ const LoginPage = () => {
 
               <form className="space-y-4" onSubmit={handleLogin}>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground font-medium">Email</Label>
+                  <Label htmlFor="email" className="text-foreground font-medium">{t('email')}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -225,13 +239,13 @@ const LoginPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-foreground font-medium">Password</Label>
+                  <Label htmlFor="password" className="text-foreground font-medium">{t('password')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="password"
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter your password"
+                      placeholder={t('password')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10 pr-10 h-12 text-base"
@@ -241,7 +255,7 @@ const LoginPage = () => {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? t('hide_password') : t('show_password')}
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -249,15 +263,15 @@ const LoginPage = () => {
                 </div>
 
                 <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
-                  {isLoading ? 'Signing in...' : 'Sign In'}
+                  {isLoading ? t('signing_in') : t('login')}
                 </Button>
               </form>
 
               <div className="mt-3 sm:mt-4 md:mt-5 space-y-1 sm:space-y-2 text-center text-xs sm:text-sm text-muted-foreground">
                 <p>
-                  New here? <a href="/signup" className="text-primary font-medium">Create an account</a>
+                  {t('dont_have_account')} <a href="/signup" className="text-primary font-medium">{t('create_account')}</a>
                 </p>
-                <p className="text-xs">By continuing you agree to our privacy policy.</p>
+                <p className="text-xs">{t('agree_privacy_policy')}</p>
               </div>
             </div>
           </div>

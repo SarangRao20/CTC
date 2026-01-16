@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Building2,
   CalendarRange,
@@ -10,6 +10,7 @@ import {
   Bell,
   BarChart3,
   Clock3,
+  MapPin,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import api from '@/services/api';
 
 const navItems = [
   { key: 'overview', label: 'Overview', icon: Building2 },
@@ -34,6 +36,22 @@ const NGODashboard: React.FC = () => {
   const ngoName = (safeCaregiver as any)?.ngo_name || (safeCaregiver as any)?.ngoName || 'CareConnect NGO';
   const [active, setActive] = useState<string>('overview');
   const [dateRange, setDateRange] = useState<string>('last7');
+  const [ngoDetails, setNgoDetails] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchNgoDetails = async () => {
+      if (!ngoName || ngoName === 'CareConnect NGO') return;
+      try {
+        const res = await api.get(`/ngo/${ngoName}`);
+        if (res.status === 200) {
+          setNgoDetails(res.data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch NGO details", e);
+      }
+    };
+    fetchNgoDetails();
+  }, [ngoName]);
 
   const stats = useMemo(() => {
     const totalPwids = patients.length;
@@ -108,7 +126,7 @@ const NGODashboard: React.FC = () => {
                         <p className="text-sm font-medium text-foreground">{p.name}</p>
                         <p className="text-xs text-muted-foreground">Room {p.roomNumber}</p>
                       </div>
-                      <Badge variant="outline" className="capitalize">{p.supportLevel.replace('-support',' support')}</Badge>
+                      <Badge variant="outline" className="capitalize">{p.supportLevel.replace('-support', ' support')}</Badge>
                     </div>
                   ))}
                 </div>
@@ -255,9 +273,8 @@ const NGODashboard: React.FC = () => {
             return (
               <button
                 key={item.key}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive ? 'bg-primary/10 text-primary border border-primary/30' : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-primary/10 text-primary border border-primary/30' : 'text-muted-foreground hover:text-foreground'
+                  }`}
                 onClick={() => setActive(item.key)}
               >
                 <Icon className="w-4 h-4" />
@@ -273,10 +290,22 @@ const NGODashboard: React.FC = () => {
           <div>
             <p className="text-xs text-muted-foreground uppercase">Organization</p>
             <p className="text-lg font-semibold">{ngoName}</p>
+            {ngoDetails && (
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-2">
+                <span className="text-xs text-muted-foreground flex items-center gap-1.5 bg-secondary/50 px-2 py-1 rounded">
+                  <MapPin className="w-3 h-3 text-primary/70" />
+                  {ngoDetails.address || 'Address not available'}
+                </span>
+                <span className="text-xs text-muted-foreground flex items-center gap-1.5 bg-secondary/50 px-2 py-1 rounded capitalize">
+                  <Building2 className="w-3 h-3 text-primary/70" />
+                  {ngoDetails.type || 'Type unknown'}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-32 sm:w-40 h-9 text-xs sm:text-sm">
                 <SelectValue placeholder="Date range" />
               </SelectTrigger>
               <SelectContent>
@@ -285,12 +314,12 @@ const NGODashboard: React.FC = () => {
                 <SelectItem value="last30">Last 30 days</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2 h-9">
               <CalendarRange className="w-4 h-4" />
               Apply
             </Button>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap mt-2 sm:mt-0">
             {riskChips.map(chip => (
               <span key={chip.label} className={`px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-2 ${chip.tone}`}>
                 <Activity className="w-3 h-3" />

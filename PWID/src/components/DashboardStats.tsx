@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, AlertTriangle, Clock, CheckCircle, Activity } from 'lucide-react';
 import api from '@/services/api';
@@ -6,6 +7,7 @@ import { useApp } from '@/context/AppContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const DashboardStats = () => {
+    const { t } = useTranslation();
     const { caregiver } = useApp();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -29,15 +31,9 @@ const DashboardStats = () => {
 
     if (loading) {
         return (
-<<<<<<< HEAD
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-                {[1, 2, 3, 4].map(i => (
-                    <Skeleton key={i} className="h-28" />
-=======
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 {[1, 2, 3, 4].map(i => (
                     <Skeleton key={i} className="h-24 sm:h-28" />
->>>>>>> origin/frontend
                 ))}
             </div>
         );
@@ -47,28 +43,28 @@ const DashboardStats = () => {
 
     const statCards = [
         {
-            title: 'Assigned Patients',
+            title: t('assigned_patients'),
             value: stats.totalPatients || 0,
             icon: Users,
             color: 'text-primary',
             bgColor: 'bg-primary/10',
         },
         {
-            title: 'Urgent Alerts',
+            title: t('alerts'),
             value: stats.urgentAlerts || 0,
             icon: AlertTriangle,
             color: 'text-urgent',
             bgColor: 'bg-urgent/10',
         },
         {
-            title: 'Overdue Tasks',
+            title: t('overdue_tasks'),
             value: stats.overdueTasks || 0,
             icon: Clock,
             color: 'text-warning',
             bgColor: 'bg-warning/10',
         },
         {
-            title: 'Completed Today',
+            title: t('completed_today'),
             value: stats.completedToday || 0,
             icon: CheckCircle,
             color: 'text-success',
@@ -79,19 +75,6 @@ const DashboardStats = () => {
     return (
         <>
             {/* Stats Cards */}
-<<<<<<< HEAD
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-                {statCards.map((stat, index) => (
-                    <Card key={index} className="border-none shadow-sm hover:shadow-md transition-shadow">
-                        <CardContent className="p-5">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
-                                    <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-                                </div>
-                                <div className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
-                                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
-=======
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {statCards.map((stat, index) => (
                     <Card key={index} className="border-none shadow-sm hover:shadow-md transition-shadow">
@@ -103,7 +86,6 @@ const DashboardStats = () => {
                                 </div>
                                 <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${stat.bgColor} flex items-center justify-center flex-shrink-0`}>
                                     <stat.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
->>>>>>> origin/frontend
                                 </div>
                             </div>
                         </CardContent>
@@ -111,22 +93,19 @@ const DashboardStats = () => {
                 ))}
             </div>
 
-<<<<<<< HEAD
-
-=======
             {/* Quick Status */}
             <Card className="border-none shadow-sm mb-6 sm:mb-8">
                 <CardContent className="p-3 sm:p-4 md:p-5">
                     <div className="flex items-center gap-2 mb-3 sm:mb-4">
                         <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                        <h3 className="text-sm sm:text-base font-semibold text-foreground">Quick Status</h3>
+                        <h3 className="text-sm sm:text-base font-semibold text-foreground">{t('quick_status')}</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start gap-3">
                             <div className="w-2 h-2 rounded-full bg-urgent mt-2" />
                             <div>
                                 <p className="text-sm font-medium text-foreground">
-                                    {stats.urgentAlerts || 0} patients need immediate attention
+                                    {stats.urgentAlerts || 0} {t('patients').toLowerCase()} {t('needs_attention')}
                                 </p>
                                 <p className="text-xs text-muted-foreground">Based on pending tasks and recent incidents</p>
                             </div>
@@ -135,7 +114,7 @@ const DashboardStats = () => {
                             <div className="w-2 h-2 rounded-full bg-warning mt-2" />
                             <div>
                                 <p className="text-sm font-medium text-foreground">
-                                    {stats.pendingTasks || 0} routine tasks scheduled for today
+                                    {stats.pendingTasks || 0} {t('tasks').toLowerCase()} scheduled
                                 </p>
                                 <p className="text-xs text-muted-foreground">Medication, therapy, and care activities</p>
                             </div>
@@ -143,7 +122,6 @@ const DashboardStats = () => {
                     </div>
                 </CardContent>
             </Card>
->>>>>>> origin/frontend
         </>
     );
 };

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { format } from 'date-fns';
@@ -12,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 const ReportPage = () => {
+    const { t } = useTranslation();
     const { patientId } = useParams();
     const { patients, getPatientEvents, caregiver } = useApp();
 
@@ -28,7 +30,7 @@ const ReportPage = () => {
         }
     }, [patient]);
 
-    if (!patient) return <div className="p-10 text-center">Loading Report or Patient Not Found...</div>;
+    if (!patient) return <div className="p-10 text-center">{t('loading_report')}</div>;
 
     const vitalsEvents = events.filter(e => e.type === 'vitals');
 
@@ -47,21 +49,17 @@ const ReportPage = () => {
                 <div>
                     <div className="flex items-center gap-2 mb-2">
                         <Heart className="w-6 h-6 text-primary" />
-<<<<<<< HEAD
-                        <h1 className="text-2xl font-bold tracking-tight">CareConnect Report</h1>
-=======
-                        <h1 className="text-2xl font-bold tracking-tight">SaharaAI Report</h1>
->>>>>>> origin/frontend
+                        <h1 className="text-2xl font-bold tracking-tight">CareConnect {t('report')}</h1>
                     </div>
-                    <p className="text-slate-500 text-sm">Generated on {format(new Date(), 'MMMM d, yyyy')}</p>
-                    <p className="text-slate-500 text-sm">Caregiver: {caregiver?.name || 'Unknown'}</p>
+                    <p className="text-slate-500 text-sm">{t('generated_on')} {format(new Date(), 'MMMM d, yyyy')}</p>
+                    <p className="text-slate-500 text-sm">{t('caregiver')}: {caregiver?.name || t('unknown')}</p>
                     {caregiver?.ngo_name && <p className="text-slate-500 text-sm font-medium">{caregiver.ngo_name}</p>}
                 </div>
                 <div className="text-right">
                     <h2 className="text-3xl font-bold">{patient.name}</h2>
-                    <p className="text-lg text-slate-600">Room {patient.roomNumber}</p>
+                    <p className="text-lg text-slate-600">{t('room')} {patient.roomNumber}</p>
                     <Badge variant="outline" className="mt-2 text-sm px-3 py-1 border-slate-300">
-                        {patient.age} Years Old • {patient.supportLevel} Support
+                        {patient.age} {t('years_old')} • {patient.supportLevel} {t('support')}
                     </Badge>
                 </div>
             </div>
@@ -69,21 +67,21 @@ const ReportPage = () => {
             {/* Vitals Summary */}
             <div className="grid grid-cols-3 gap-6 mb-8">
                 <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-center">
-                    <p className="text-sm text-slate-500 uppercase tracking-widest mb-1">Heart Rate (Avg)</p>
+                    <p className="text-sm text-slate-500 uppercase tracking-widest mb-1">{t('avg_hr')}</p>
                     <p className="text-3xl font-bold flex items-center justify-center gap-2">
                         <Activity className="w-5 h-5 text-red-500" />
                         {avgHR} <span className="text-sm font-normal text-slate-400">bpm</span>
                     </p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-center">
-                    <p className="text-sm text-slate-500 uppercase tracking-widest mb-1">Temperature (Avg)</p>
+                    <p className="text-sm text-slate-500 uppercase tracking-widest mb-1">{t('avg_temp')}</p>
                     <p className="text-3xl font-bold flex items-center justify-center gap-2">
                         <Thermometer className="w-5 h-5 text-blue-500" />
                         {avgTemp} <span className="text-sm font-normal text-slate-400">°F</span>
                     </p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-center">
-                    <p className="text-sm text-slate-500 uppercase tracking-widest mb-1">Total Logs</p>
+                    <p className="text-sm text-slate-500 uppercase tracking-widest mb-1">{t('total_logs')}</p>
                     <p className="text-3xl font-bold flex items-center justify-center gap-2">
                         <TrendingUp className="w-5 h-5 text-green-500" />
                         {events.length}
@@ -94,23 +92,23 @@ const ReportPage = () => {
             {/* Medical Info */}
             <div className="mb-8">
                 <h3 className="text-lg font-bold border-b border-slate-200 pb-2 mb-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5" /> Medical Context
+                    <FileText className="w-5 h-5" /> {t('medical_context')}
                 </h3>
                 <div className="grid grid-cols-2 gap-8 text-sm">
                     <div>
-                        <p className="font-semibold text-slate-600 mb-1">Diagnosis</p>
+                        <p className="font-semibold text-slate-600 mb-1">{t('diagnosis')}</p>
                         <p>{patient.primaryDiagnosis}</p>
                     </div>
                     <div>
-                        <p className="font-semibold text-slate-600 mb-1">Allergies</p>
-                        <p>{patient.allergies.length ? patient.allergies.join(', ') : 'None'}</p>
+                        <p className="font-semibold text-slate-600 mb-1">{t('allergies')}</p>
+                        <p>{patient.allergies.length ? patient.allergies.join(', ') : t('none')}</p>
                     </div>
                     <div className="col-span-2">
-                        <p className="font-semibold text-slate-600 mb-1">Current Medications</p>
+                        <p className="font-semibold text-slate-600 mb-1">{t('current_medications')}</p>
                         <div className="flex flex-wrap gap-2">
                             {patient.medications.length
                                 ? patient.medications.map(m => <span key={m} className="px-2 py-1 bg-slate-100 rounded border border-slate-200">{m}</span>)
-                                : 'None'
+                                : t('none')
                             }
                         </div>
                     </div>
@@ -119,27 +117,27 @@ const ReportPage = () => {
 
             {/* Recent Logs Table */}
             <div>
-                <h3 className="text-lg font-bold border-b border-slate-200 pb-2 mb-4">Recent Logs History</h3>
+                <h3 className="text-lg font-bold border-b border-slate-200 pb-2 mb-4">{t('recent_logs_history')}</h3>
                 <table className="w-full text-sm text-left">
                     <thead className="bg-slate-100 text-slate-600 font-semibold">
                         <tr>
-                            <th className="p-3 rounded-tl-lg">Date/Time</th>
-                            <th className="p-3">Type</th>
-                            <th className="p-3">Details</th>
-                            <th className="p-3 rounded-tr-lg">Caregiver</th>
+                            <th className="p-3 rounded-tl-lg">{t('date_time')}</th>
+                            <th className="p-3">{t('type')}</th>
+                            <th className="p-3">{t('details')}</th>
+                            <th className="p-3 rounded-tr-lg">{t('caregiver')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                         {events.map((e) => (
                             <tr key={e.id}>
                                 <td className="p-3 w-40">{format(new Date(e.timestamp), 'MMM d, h:mm a')}</td>
-                                <td className="p-3 w-32 capitalize font-medium">{e.type.replace('-', ' ')}</td>
+                                <td className="p-3 w-32 capitalize font-medium">{t(e.type) || e.type}</td>
                                 <td className="p-3">
                                     <p className="font-medium">{e.title}</p>
                                     <p className="text-slate-500">{e.voiceTranscription || e.description}</p>
                                     {e.vitals && (
                                         <div className="text-xs text-slate-400 mt-1">
-                                            {Object.entries(e.vitals).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                                            {Object.entries(e.vitals).map(([k, v]) => `${t(k)}: ${v}`).join(', ')}
                                         </div>
                                     )}
                                 </td>
@@ -148,16 +146,12 @@ const ReportPage = () => {
                         ))}
                     </tbody>
                 </table>
-                {events.length === 0 && <p className="text-center p-8 text-slate-500">No logs found for this period.</p>}
+                {events.length === 0 && <p className="text-center p-8 text-slate-500">{t('no_logs_found')}</p>}
             </div>
 
             {/* Footer */}
             <div className="mt-12 pt-6 border-t border-slate-200 text-center text-xs text-slate-400">
-<<<<<<< HEAD
-                Generated by CareConnect. Confidential Patient Information.
-=======
-                Generated by SaharaAI. Confidential Patient Information.
->>>>>>> origin/frontend
+                {t('report_footer')}
             </div>
         </div>
     );

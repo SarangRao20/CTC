@@ -86,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" className="text-muted-foreground relative" aria-label={`Notifications, ${overdueTasks} urgent`}>
+          <Button variant="ghost" size="icon" className="text-muted-foreground relative" aria-label={`Notifications, ${overdueTasks} urgent`} id="tour-notifications">
             <Bell className="w-5 h-5" />
             {overdueTasks > 0 && (
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-urgent animate-pulse" />
@@ -95,7 +95,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="pl-0 gap-2 hover:bg-transparent">
+              <Button variant="ghost" className="pl-0 gap-2 hover:bg-transparent" id="tour-profile">
                 <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-primary font-bold border border-border">
                   {caregiver?.name ? caregiver.name.charAt(0) : 'U'}
                 </div>

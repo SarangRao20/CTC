@@ -41,12 +41,21 @@ const SignupPage: React.FC = () => {
   // Helper to get selected child object
   const selectedChild = childOptions.find((c) => String(c.id) === String(childId));
 
+  const [loadingChildren, setLoadingChildren] = useState(false);
+  const fetchChildren = () => {
+    setLoadingChildren(true);
+    api.get('/pwids').then(res => {
+      setChildOptions(res.data.map((p: any) => ({ id: p.id, name: p.full_name })));
+    }).catch(() => {
+      setChildOptions([]);
+      toast({ title: "Error", description: "Failed to load children list.", variant: "destructive" });
+    }).finally(() => setLoadingChildren(false));
+  };
+
   // Fetch PWID options for parent role
   useEffect(() => {
     if (role === 'Parent') {
-      api.get('/pwids').then(res => {
-        setChildOptions(res.data.map((p: any) => ({ id: p.id, name: p.full_name })));
-      }).catch(() => setChildOptions([]));
+      fetchChildren();
     }
   }, [role]);
   const [password, setPassword] = useState('');
@@ -242,9 +251,9 @@ const SignupPage: React.FC = () => {
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Caregiver">Caregiver</SelectItem>
-                      <SelectItem value="Coordinator">Coordinator/NGO</SelectItem>
-                      <SelectItem value="Parent">Parent</SelectItem>
+                      <SelectItem value="Caregiver" key="caregiver">Caregiver</SelectItem>
+                      <SelectItem value="Parent" key="parent">Parent</SelectItem>
+                      <SelectItem value="Coordinator" key="coordinator">Coordinator/NGO</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -252,14 +261,29 @@ const SignupPage: React.FC = () => {
                 {/* Parent-Specific Fields */}
                 {role === 'Parent' && (
                   <div className="space-y-2">
-                    <Label className="text-foreground font-medium">Select Your Child</Label>
-                    <Select value={childId} onValueChange={setChildId}>
+                    <div className="flex justify-between items-center">
+                      <Label className="text-foreground font-medium">Select Your Child</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-primary"
+                        onClick={fetchChildren}
+                        disabled={loadingChildren}
+                      >
+                        {loadingChildren ? 'Loading...' : 'Refresh List'}
+                      </Button>
+                    </div>
+                    <Select value={childId} onValueChange={setChildId} disabled={loadingChildren}>
                       <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Select child">
+                        <SelectValue placeholder={loadingChildren ? "Loading children..." : "Select child"}>
                           {selectedChild ? selectedChild.name : null}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
+                        {childOptions.length === 0 && !loadingChildren && (
+                          <div className="p-2 text-sm text-muted-foreground text-center">No children found</div>
+                        )}
                         {childOptions.map((child) => (
                           <SelectItem key={child.id} value={String(child.id)}>
                             {child.name}

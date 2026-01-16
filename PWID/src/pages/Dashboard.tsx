@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useNavigate } from 'react-router-dom';
 import CareCard from '@/components/CareCard';
 import ProgressModal from '@/components/ProgressModal';
 import DashboardStats from '@/components/DashboardStats';
@@ -8,12 +9,22 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, Sun, X } from 'lucide-react';
 import { Patient } from '@/data/mockData';
+import UserGuide from '@/components/UserGuide';
 
 type AgeFilter = 'all' | 'children' | 'adolescents' | 'adults';
 type SupportFilter = 'all' | 'high' | 'medium' | 'low';
 
 const Dashboard = () => {
   const { patients, caregiver } = useApp();
+  const navigate = useNavigate();
+
+  // Redirect Parents to their specific dashboard if they somehow land here
+  React.useEffect(() => {
+    if (caregiver?.role === 'Parent') {
+      navigate('/parent/dashboard');
+    }
+  }, [caregiver, navigate]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [progressPatient, setProgressPatient] = useState<Patient | null>(null);
 
@@ -67,9 +78,12 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in" id="dashboard-welcome">
+      <UserGuide />
       {/* Dashboard Stats */}
-      <DashboardStats />
+      <div id="tour-stats">
+        <DashboardStats />
+      </div>
 
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -85,7 +99,7 @@ const Dashboard = () => {
 
         <div className="flex flex-col items-end gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2 w-full">
-            <div className="relative flex-1 md:w-64">
+            <div className="relative flex-1 md:w-64" id="tour-search">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search residents..."
@@ -104,6 +118,7 @@ const Dashboard = () => {
               size="icon"
               className="rounded-xl border-none shadow-sm bg-card shrink-0"
               onClick={() => setShowFilters(!showFilters)}
+              id="tour-filters"
             >
               <Filter className={`w-4 h-4 ${showFilters ? 'text-primary' : 'text-muted-foreground'}`} />
             </Button>
@@ -150,7 +165,7 @@ const Dashboard = () => {
       )}
 
       {/* Care Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4" id="tour-care-cards">
         {filteredPatients.map(patient => (
           <CareCard
             key={patient.id}

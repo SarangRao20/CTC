@@ -28,15 +28,34 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
+      // Try Caretaker login first
       const response = await api.post('/caretaker/login', { email, password });
-
       if (response.status === 200) {
         login(response.data.caretaker);
         navigate('/dashboard');
+        return; // Exit on success
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
-      console.error('Login error:', err);
+      // If Caretaker login failed explicitly (invalid credentials), try Parent login
+      // But only if it's a 401 (Auth error), not 500 or timeout
+      if (err.response && err.response.status === 401) {
+        try {
+          const parentRes = await api.post('/parent/login', { email, password });
+          if (parentRes.status === 200) {
+            login(parentRes.data.parent);
+            navigate('/parent/dashboard');
+            return;
+          }
+        } catch (parentErr: any) {
+          // Both failed
+          setError('Invalid credentials. Please check your email and password.');
+          console.error('Parent login error:', parentErr);
+        }
+      } else {
+        // Some other error (network, 500, etc)
+        setError(err.response?.data?.error || 'Login failed. Please try again.');
+        console.error('Caretaker login error:', err);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -10,6 +10,7 @@ import {
     Loader2, MapPin, Clock, CheckCircle, AlertTriangle,
     Activity, Moon, Utensils, Smile, Calendar, Phone
 } from 'lucide-react';
+import ParentUserGuide from '@/components/ParentUserGuide';
 
 interface TrackingStatus {
     status: 'in_transit' | 'arrived' | 'overdue' | 'no_record';
@@ -91,8 +92,9 @@ const ParentDashboard: React.FC = () => {
         <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
             <div className="max-w-5xl mx-auto space-y-8">
                 {/* Header */}
-                <header className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <header className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-100" id="parent-welcome">
                     <div>
+                        <ParentUserGuide />
                         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Parent Dashboard</h1>
                         <p className="text-slate-500">Monitoring <span className="font-semibold text-primary">{childInfo?.full_name}</span></p>
                     </div>
@@ -108,7 +110,7 @@ const ParentDashboard: React.FC = () => {
                     {/* Left Column: Stats & Status */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Child Profile Card */}
-                        <Card className="border-slate-100 shadow-sm overflow-hidden">
+                        <Card className="border-slate-100 shadow-sm overflow-hidden" id="child-profile">
                             <div className="h-2 bg-gradient-to-r from-blue-400 to-purple-400" />
                             <CardContent className="p-6">
                                 <div className="flex items-start justify-between">
@@ -139,7 +141,7 @@ const ParentDashboard: React.FC = () => {
                         </Card>
 
                         {/* Recent Activity / Logs */}
-                        <Card className="border-slate-100 shadow-sm">
+                        <Card className="border-slate-100 shadow-sm" id="recent-logs">
                             <CardHeader className="pb-3 border-b border-slate-50">
                                 <CardTitle className="text-lg flex items-center gap-2">
                                     <Activity className="w-5 h-5 text-primary" />
@@ -187,7 +189,7 @@ const ParentDashboard: React.FC = () => {
                     {/* Right Column: Tracking & Risk */}
                     <div className="space-y-6">
                         {/* Risk Assessment */}
-                        <Card className="border-slate-100 shadow-sm overflow-hidden">
+                        <Card className="border-slate-100 shadow-sm overflow-hidden" id="risk-assessment">
                             <CardHeader className="bg-gradient-to-br from-slate-50 to-white border-b border-slate-100">
                                 <CardTitle className="text-base font-medium flex items-center justify-between">
                                     Risk Assessment
@@ -218,7 +220,7 @@ const ParentDashboard: React.FC = () => {
                         </Card>
 
                         {/* Travel Status */}
-                        <Card className="border-slate-100 shadow-sm">
+                        <Card className="border-slate-100 shadow-sm" id="travel-status">
                             <CardHeader>
                                 <CardTitle className="text-base font-medium">Travel Status</CardTitle>
                             </CardHeader>

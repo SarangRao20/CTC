@@ -19,6 +19,7 @@ const Header = () => {
   const overdueTasks = tasks.filter(t => t.status === 'overdue').length;
 
   const navItems = [
+    { path: '/ngo', label: 'NGO', icon: Building2 },
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/history', label: 'History', icon: History },
     { path: '/routine', label: 'Routine Checks', icon: ClipboardList },

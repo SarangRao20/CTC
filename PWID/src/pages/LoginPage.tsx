@@ -65,7 +65,7 @@ const LoginPage = () => {
             <Heart className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground tracking-tight">CareConnect</h1>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">SaharaAI</h1>
             <p className="text-sm text-muted-foreground">PWID Care Management</p>
           </div>
           <div className="ml-auto hidden sm:flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -76,10 +76,10 @@ const LoginPage = () => {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-6 relative z-10">
-        <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-start animate-fade-in">
+      <div className="flex-1 flex items-center justify-center p-2 sm:p-4 md:p-6 relative z-10">
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 items-start animate-fade-in">
           {/* Left: Overview */}
-          <div className="space-y-8">
+          <div className="space-y-4 sm:space-y-6 md:space-y-8">
             <div className="text-left lg:text-left">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
                 Welcome back, {caregiver.name}
@@ -101,70 +101,70 @@ const LoginPage = () => {
               aria-label="Dashboard summary"
             >
               <article className="stat-card">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-muted-foreground text-sm font-medium">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <span className="text-muted-foreground text-xs sm:text-sm font-medium">
                     Assigned Patients
                   </span>
-                  <div className="w-10 h-10 rounded-lg bg-info-light flex items-center justify-center">
-                    <Users className="w-5 h-5 text-info" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-info-light flex items-center justify-center">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-foreground">{stats.totalPatients}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">{stats.totalPatients}</p>
               </article>
 
               <article className="stat-card">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-muted-foreground text-sm font-medium">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <span className="text-muted-foreground text-xs sm:text-sm font-medium">
                     Urgent Alerts
                   </span>
-                  <div className="w-10 h-10 rounded-lg bg-urgent-light flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-urgent" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-urgent-light flex items-center justify-center">
+                    <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-urgent" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-urgent">{stats.urgentAlerts}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-urgent">{stats.urgentAlerts}</p>
               </article>
 
               <article className="stat-card">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-muted-foreground text-sm font-medium">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <span className="text-muted-foreground text-xs sm:text-sm font-medium">
                     Overdue Tasks
                   </span>
-                  <div className="w-10 h-10 rounded-lg bg-warning-light flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-warning" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-warning-light flex items-center justify-center">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-warning">{stats.overdueTasks}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-warning">{stats.overdueTasks}</p>
               </article>
 
               <article className="stat-card">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-muted-foreground text-sm font-medium">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <span className="text-muted-foreground text-xs sm:text-sm font-medium">
                     Completed Today
                   </span>
-                  <div className="w-10 h-10 rounded-lg bg-success-light flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-success" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-success-light flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-success">{stats.completedToday}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-success">{stats.completedToday}</p>
               </article>
             </div>
 
             {/* Quick Status */}
-            <div className="bg-card/90 backdrop-blur rounded-2xl border border-border shadow-lg p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Activity className="w-5 h-5 text-primary" />
-                <h3 className="text-lg font-semibold text-foreground">Quick Status</h3>
+            <div className="bg-card/90 backdrop-blur rounded-2xl border border-border shadow-lg p-3 sm:p-4 md:p-6">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3 md:mb-4">
+                <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                <h3 className="text-base sm:text-lg font-semibold text-foreground">Quick Status</h3>
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl">
-                  <div className="w-3 h-3 rounded-full bg-urgent animate-pulse" />
-                  <span className="text-foreground">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-secondary/50 rounded-xl">
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-urgent animate-pulse flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-foreground">
                     <strong>{stats.urgentAlerts} patient{stats.urgentAlerts !== 1 ? 's' : ''}</strong> need{stats.urgentAlerts === 1 ? 's' : ''} immediate attention
                   </span>
                 </div>
-                <div className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl">
-                  <div className="w-3 h-3 rounded-full bg-warning" />
-                  <span className="text-foreground">
+                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 md:p-4 bg-secondary/50 rounded-xl">
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-warning flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-foreground">
                     <strong>{stats.pendingTasks} routine task{stats.pendingTasks !== 1 ? 's' : ''}</strong> scheduled for today
                   </span>
                 </div>
@@ -173,22 +173,22 @@ const LoginPage = () => {
           </div>
 
           {/* Right: Login Card */}
-          <div className="w-full max-w-lg ml-auto">
-            <div className="bg-card/95 backdrop-blur rounded-2xl border border-border shadow-2xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-                  <Heart className="w-7 h-7 text-primary-foreground" />
+          <div className="w-full max-w-lg mx-auto lg:ml-auto">
+            <div className="bg-card/95 backdrop-blur rounded-2xl border border-border shadow-2xl p-4 sm:p-6 md:p-8">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary flex items-center justify-center">
+                  <Heart className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">Sign in</h2>
-                  <p className="text-sm text-muted-foreground">Access your caregiver dashboard</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">Sign in</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Access your caregiver dashboard</p>
                 </div>
               </div>
 
               {error && (
-                <div className="mb-4 p-3 rounded-xl bg-urgent-light border border-urgent/30 flex items-center gap-2" role="alert">
-                  <AlertCircle className="w-4 h-4 text-urgent" />
-                  <span className="text-sm text-urgent">{error}</span>
+                <div className="mb-4 p-2 sm:p-3 rounded-xl bg-urgent-light border border-urgent/30 flex items-center gap-2" role="alert">
+                  <AlertCircle className="w-4 h-4 text-urgent flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-urgent">{error}</span>
                 </div>
               )}
 
@@ -238,7 +238,7 @@ const LoginPage = () => {
                 </Button>
               </form>
 
-              <div className="mt-5 space-y-2 text-center text-sm text-muted-foreground">
+              <div className="mt-3 sm:mt-4 md:mt-5 space-y-1 sm:space-y-2 text-center text-xs sm:text-sm text-muted-foreground">
                 <p>
                   New here? <a href="/signup" className="text-primary font-medium">Create an account</a>
                 </p>

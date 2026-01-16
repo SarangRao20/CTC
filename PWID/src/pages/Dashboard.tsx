@@ -103,107 +103,166 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Dashboard Stats */}
-      <DashboardStats />
+    <div className="min-h-screen bg-background">
+      <Header />
 
-      {/* Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Sun className="w-8 h-8 text-warning" />
-            Good Morning, {caregiver?.name.split(' ')[0] || 'Caregiver'}
-          </h1>
-          <p className="text-muted-foreground mt-1 text-lg">
-            Here is the status of your {patients.length} residents today.
-          </p>
-        </div>
+      <main className="max-w-screen-2xl mx-auto p-4 md:p-6">
+        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-140px)]">
+          {/* Left Column - Patient List */}
+          <section
+            className={selectedPatient ? 'lg:w-1/2 xl:w-2/5 flex flex-col' : 'w-full flex flex-col'}
+            aria-label="Patient list"
+          >
+            {/* Search & Filters */}
+            <div className="bg-card rounded-2xl border border-border p-4 mb-4 space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search patients by name, room, or ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-input pl-12 w-full"
+                  aria-label="Search patients"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Clear search"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
 
-        <div className="flex flex-col items-end gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 w-full">
-            <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search residents..."
-                className="pl-9 w-full bg-card border-none shadow-sm rounded-xl"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                </button>
+              {/* Age Group Filters */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">
+                  By Age Group
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ageFilters.map((filter) => (
+                    <Button
+                      key={filter.value}
+                      variant={ageFilter === filter.value ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setAgeFilter(filter.value)}
+                      className="gap-2"
+                      aria-pressed={ageFilter === filter.value}
+                    >
+                      {filter.label}
+                      <Badge
+                        variant={ageFilter === filter.value ? 'secondary' : 'outline'}
+                        className="ml-1"
+                      >
+                        {filter.count}
+                      </Badge>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Support Level Filters */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">
+                  By Functional Support Level
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {supportFilters.map((filter) => (
+                    <Button
+                      key={filter.value}
+                      variant={supportFilter === filter.value ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSupportFilter(filter.value)}
+                      className="gap-2"
+                      aria-pressed={supportFilter === filter.value}
+                    >
+                      <span className="flex flex-col items-start">
+                        <span>{filter.label}</span>
+                        {filter.value !== 'all' && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {filter.description}
+                          </span>
+                        )}
+                      </span>
+                      <Badge
+                        variant={supportFilter === filter.value ? 'secondary' : 'outline'}
+                        className="ml-1"
+                      >
+                        {filter.count}
+                      </Badge>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Patient List Header */}
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">
+                  Showing {filteredPatients.length} of {patients.length} patients
+                </span>
+              </div>
+            </div>
+
+            {/* Patient List */}
+            <div
+              className="flex-1 overflow-y-auto space-y-3 scrollbar-thin pr-1"
+              role="list"
+              aria-label="Patient list"
+            >
+              {filteredPatients.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground">
+                    No patients match your search or filter criteria.
+                  </p>
+                  <Button
+                    variant="link"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setAgeFilter('all');
+                      setSupportFilter('all');
+                    }}
+                    className="mt-2"
+                  >
+                    Clear all filters
+                  </Button>
+                </div>
+              ) : (
+                filteredPatients.map((patient) => (
+                  <PatientListRow
+                    key={patient.id}
+                    patient={patient}
+                    isSelected={selectedPatientId === patient.id}
+                    onSelect={() => selectPatient(patient.id)}
+                    onViewProgress={() => setProgressPatient(patient)}
+                  />
+                ))
               )}
             </div>
-            <Button
-              variant={showFilters ? 'secondary' : 'outline'}
-              size="icon"
-              className="rounded-xl border-none shadow-sm bg-card shrink-0"
-              onClick={() => setShowFilters(!showFilters)}
+          </section>
+
+          {/* Right Column - Patient Detail */}
+          {selectedPatient && (
+            <section
+              className="lg:w-1/2 xl:w-3/5 h-full"
+              aria-label="Patient details"
             >
-              <Filter className={`w-4 h-4 ${showFilters ? 'text-primary' : 'text-muted-foreground'}`} />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="bg-card p-4 rounded-2xl shadow-sm space-y-4 animate-in slide-in-from-top-2 duration-200">
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Age Group</span>
-            <div className="flex flex-wrap gap-2">
-              {ageFilters.map(f => (
-                <Button
-                  key={f.value}
-                  variant={ageFilter === f.value ? 'default' : 'outline'}
-                  size="sm"
-                  className="rounded-lg"
-                  onClick={() => setAgeFilter(f.value)}
-                >
-                  {f.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Support Level</span>
-            <div className="flex flex-wrap gap-2">
-              {supportFilters.map(f => (
-                <Button
-                  key={f.value}
-                  variant={supportFilter === f.value ? 'default' : 'outline'}
-                  size="sm"
-                  className="rounded-lg"
-                  onClick={() => setSupportFilter(f.value)}
-                >
-                  {f.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Care Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredPatients.map(patient => (
-          <CareCard
-            key={patient.id}
-            patient={patient}
-            onViewProgress={() => setProgressPatient(patient)}
-          />
-        ))}
-      </div>
-
-      {filteredPatients.length === 0 && (
-        <div className="text-center py-20">
-          <p className="text-muted-foreground text-lg">No residents found matching your criteria.</p>
-          <Button variant="link" onClick={() => {
-            setSearchQuery('');
-            setAgeFilter('all');
-            setSupportFilter('all');
-          }}>Clear all filters</Button>
+              <PatientDetailPane
+                patient={selectedPatient}
+                tasks={getPatientTasks(selectedPatient.id)}
+                events={getPatientEvents(selectedPatient.id)}
+                onViewProgress={() => setProgressPatient(selectedPatient)}
+              />
+            </section>
+          )}
         </div>
       </main>
 

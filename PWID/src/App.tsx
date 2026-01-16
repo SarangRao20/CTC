@@ -4,12 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider, useApp } from "@/context/AppContext";
+import Layout from "@/components/Layout";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import Dashboard from "./pages/Dashboard";
 import NGODashboard from "./pages/NGODashboard";
 import HistoryPage from "./pages/HistoryPage";
 import RoutineChecksPage from "./pages/RoutineChecksPage";
+import ReportPage from "./pages/ReportPage";
+import PatientDashboard from "./pages/PatientDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

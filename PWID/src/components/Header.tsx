@@ -9,8 +9,19 @@ import {
   ClipboardList, 
   Bell, 
   LogOut,
-  User
+  User,
+  Building2,
+  Moon,
+  Sun
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const location = useLocation();

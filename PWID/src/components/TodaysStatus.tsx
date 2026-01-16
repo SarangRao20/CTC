@@ -159,17 +159,7 @@ const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
                 </CardContent>
             </Card>
 
-            {/* Recent Alert Check */}
-            {(latestLog.incident !== 'None' && latestLog.incident !== 'no') && (
-                <div className="flex items-center gap-3 p-4 bg-urgent/10 border border-urgent/20 rounded-xl text-urgent">
-                    <AlertTriangle className="w-5 h-5" />
-                    <div className="flex-1">
-                        <h4 className="font-bold text-sm">Action Needed</h4>
-                        <p className="text-xs opacity-90">An incident was reported today. Please ensure supervisor is informed.</p>
-                    </div>
-                    <Button size="sm" variant="destructive" className="h-8">Inform Supervisor</Button>
-                </div>
-            )}
+
         </div>
     );
 };

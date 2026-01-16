@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import CareCard from '@/components/CareCard';
 import ProgressModal from '@/components/ProgressModal';
 import DashboardStats from '@/components/DashboardStats';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Sun, X } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 import { Patient } from '@/data/mockData';
 import UserGuide from '@/components/UserGuide';
 
@@ -85,19 +86,11 @@ const Dashboard = () => {
         <DashboardStats />
       </div>
 
-      {/* Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Sun className="w-8 h-8 text-warning" />
-            Good Morning, {caregiver?.name.split(' ')[0] || 'Caregiver'}
-          </h1>
-          <p className="text-muted-foreground mt-1 text-lg">
-            Here is the status of your {patients.length} residents today.
-          </p>
-        </div>
 
-        <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+      {/* Dashboard Header */}
+      {/* Dashboard Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-start gap-4">
+        <div className="flex flex-col items-start gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2 w-full">
             <div className="relative flex-1 md:w-64" id="tour-search">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

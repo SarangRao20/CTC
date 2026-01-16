@@ -18,6 +18,8 @@ const PatientDashboard = () => {
     const [logs, setLogs] = useState<any[]>([]);
     const [risk, setRisk] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("incidents");
+    const [informed, setInformed] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         const fetchData = async () => {
@@ -89,6 +91,15 @@ const PatientDashboard = () => {
         }
     };
 
+    // Risk Text Color
+    const getRiskTextColor = (level: string) => {
+        switch (level?.toLowerCase()) {
+            case 'high': return 'text-urgent';
+            case 'medium': return 'text-warning';
+            default: return 'text-success';
+        }
+    };
+
     const incidentCount = logs.filter(l => l.incident !== 'None' && l.incident !== 'no').length;
 
     const pieData = [
@@ -105,7 +116,7 @@ const PatientDashboard = () => {
                     <ArrowLeft className="w-6 h-6" />
                 </Button>
                 <div>
-                    <h1 className="text-3xl font-bold">{patient.full_name}</h1>
+                    <h1 className={`text-xl font-bold ${getRiskTextColor(risk?.risk_level)}`}>{patient.full_name}</h1>
                     <p className="text-muted-foreground">Room {patient.roomNumber} • Age {patient.age} • {patient.supportLevel}</p>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
@@ -118,85 +129,22 @@ const PatientDashboard = () => {
                             <Calendar className="w-4 h-4 mr-2" /> Mark Left NGO
                         </Button>
                     )}
-                    <Badge className={`text-lg px-4 py-1.5 rounded-full ${getRiskColor(risk?.risk_level)}`}>
-                        {risk?.risk_level} Risk Level
-                    </Badge>
                 </div>
             </div>
 
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Recorded Incidents</CardTitle>
-                        <AlertTriangle className="h-4 w-4 text-urgent" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{incidentCount}</div>
-                        <p className="text-xs text-muted-foreground">Total recorded in history</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Trend Score</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{risk?.risk_score}</div>
-                        <p className="text-xs text-muted-foreground">Avg risk score (Lower is better)</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Last Check</CardTitle>
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{logs.length > 0 ? format(new Date(logs[logs.length - 1].created_at), 'HH:mm') : '--'}</div>
-                        <p className="text-xs text-muted-foreground">
-                            {logs.length > 0 ? format(new Date(logs[logs.length - 1].created_at), 'MMM dd, yyyy') : 'No logs'}
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Compliance</CardTitle>
-                        <Activity className="h-4 w-4 text-success" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">98%</div>
-                        <p className="text-xs text-muted-foreground">Medication & Routine</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Risk Reason Alert */}
-            {risk?.reason && (
-                <div className={`p-4 border-l-4 rounded-r-lg shadow-sm ${risk.risk_level === 'High' ? 'bg-urgent/10 border-urgent' : risk.risk_level === 'Medium' ? 'bg-warning/10 border-warning' : 'bg-success/10 border-success'}`}>
-                    <h3 className="font-semibold mb-1">Risk Analysis</h3>
-                    <p>{risk.reason}</p>
-                    {risk.details && risk.details.length > 0 && (
-                        <ul className="mt-2 text-sm list-disc list-inside opacity-80">
-                            {risk.details.map((d: string, i: number) => <li key={i}>{d}</li>)}
-                        </ul>
-                    )}
-                </div>
-            )}
 
 
 
-            // ... (imports remain the same)
 
-            // ... (inside component)
 
             {/* Charts Section */}
-            <Tabs defaultValue="today" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-5 md:w-[700px]">
-                    <TabsTrigger value="today">Today</TabsTrigger>
+                    <TabsTrigger value="incidents">Incidents</TabsTrigger>
                     <TabsTrigger value="insights">Insights</TabsTrigger>
                     <TabsTrigger value="mood">Mood</TabsTrigger>
                     <TabsTrigger value="trends">Trends</TabsTrigger>
-                    <TabsTrigger value="logs">Logs</TabsTrigger>
+                    <TabsTrigger value="today">Today</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="today" className="mt-4">
@@ -500,31 +448,56 @@ const PatientDashboard = () => {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="logs" className="mt-4">
+                <TabsContent value="incidents" className="mt-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Recent Observations</CardTitle>
+                            <CardTitle>Incident & Routine Logs</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {logs.slice().reverse().slice(0, 10).map((log) => (
-                                    <div key={log.id} className="flex items-start gap-4 p-4 rounded-xl bg-secondary/30 border border-border/50">
-                                        <div className={`p-2 rounded-lg ${log.incident !== 'None' && log.incident !== 'no' ? 'bg-urgent/10 text-urgent' : 'bg-background text-primary'}`}>
-                                            {log.incident !== 'None' && log.incident !== 'no' ? <AlertTriangle className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="font-semibold text-sm">{log.mood} Mood</h4>
-                                                <span className="text-xs text-muted-foreground">{format(new Date(log.created_at), 'MMM dd, HH:mm')}</span>
+                                {[...logs]
+                                    .filter(log => new Date(log.created_at) >= subDays(new Date(), 2))
+                                    .sort((a, b) => {
+                                        const aHasIncident = a.incident !== 'None' && a.incident !== 'no';
+                                        const bHasIncident = b.incident !== 'None' && b.incident !== 'no';
+                                        if (aHasIncident && !bHasIncident) return -1;
+                                        if (!aHasIncident && bHasIncident) return 1;
+                                        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                                    })
+                                    .map((log) => (
+                                        <div key={log.id} className={`flex items-start gap-4 p-4 rounded-xl border ${log.incident !== 'None' && log.incident !== 'no' ? 'bg-urgent/5 border-urgent/20' : 'bg-secondary/30 border-border/50'}`}>
+                                            <div className={`p-2 rounded-lg ${log.incident !== 'None' && log.incident !== 'no' ? 'bg-urgent/10 text-urgent' : 'bg-background text-primary'}`}>
+                                                {log.incident !== 'None' && log.incident !== 'no' ? <AlertTriangle className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
                                             </div>
-                                            <p className="text-sm text-muted-foreground mt-1">{log.notes}</p>
-                                            <div className="flex gap-2 mt-2">
-                                                <Badge variant="outline" className="text-[10px]">Sleep: {log.sleep_quality}</Badge>
-                                                <Badge variant="outline" className="text-[10px]">Meals: {log.meals}</Badge>
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className={`font-semibold text-sm ${log.incident !== 'None' && log.incident !== 'no' ? 'text-urgent' : ''}`}>
+                                                        {log.incident !== 'None' && log.incident !== 'no' ? `Incident: ${log.incident}` : `${log.mood} Mood`}
+                                                    </h4>
+                                                    <span className="text-xs text-muted-foreground">{format(new Date(log.created_at), 'MMM dd, HH:mm')}</span>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground mt-1">{log.notes}</p>
+                                                <div className="flex gap-2 mt-2">
+                                                    <Badge variant="outline" className="text-[10px]">Sleep: {log.sleep_quality}</Badge>
+                                                    <Badge variant="outline" className="text-[10px]">Meals: {log.meals}</Badge>
+                                                </div>
                                             </div>
+                                            {(log.incident !== 'None' && log.incident !== 'no') && (
+                                                <div className="flex flex-col items-center self-center pl-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant={informed[log.id] ? "ghost" : "destructive"}
+                                                        className={informed[log.id] ? "text-success hover:text-success hover:bg-success/10 h-8" : "h-8 px-3 text-xs"}
+                                                        onClick={() => setInformed(prev => ({ ...prev, [log.id]: true }))}
+                                                        disabled={informed[log.id]}
+                                                    >
+                                                        {informed[log.id] ? <CheckCircle2 className="w-4 h-4 mr-1" /> : "Inform"}
+                                                        {informed[log.id] && "Informed"}
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
                             </div>
                         </CardContent>
                     </Card>

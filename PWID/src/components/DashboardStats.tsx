@@ -91,35 +91,7 @@ const DashboardStats = () => {
                 ))}
             </div>
 
-            {/* Quick Status */}
-            <Card className="border-none shadow-sm mb-8">
-                <CardContent className="p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Activity className="w-5 h-5 text-primary" />
-                        <h3 className="font-semibold text-foreground">Quick Status</h3>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-start gap-3">
-                            <div className="w-2 h-2 rounded-full bg-urgent mt-2" />
-                            <div>
-                                <p className="text-sm font-medium text-foreground">
-                                    {stats.urgentAlerts || 0} patients need immediate attention
-                                </p>
-                                <p className="text-xs text-muted-foreground">Based on pending tasks and recent incidents</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <div className="w-2 h-2 rounded-full bg-warning mt-2" />
-                            <div>
-                                <p className="text-sm font-medium text-foreground">
-                                    {stats.pendingTasks || 0} routine tasks scheduled for today
-                                </p>
-                                <p className="text-xs text-muted-foreground">Medication, therapy, and care activities</p>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+
         </>
     );
 };

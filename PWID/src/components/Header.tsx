@@ -18,10 +18,22 @@ import {
   Bell,
   LogOut,
   User,
+<<<<<<< HEAD
   Settings,
+=======
+  Building2,
+>>>>>>> origin/frontend
   Moon,
   Sun
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   isDark?: boolean;
@@ -41,6 +53,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
   const overdueTasks = tasks ? tasks.filter(t => t.status === 'overdue').length : 0;
 
   const navItems = [
+    { path: '/ngo', label: 'NGO', icon: Building2 },
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/history', label: 'History', icon: History },
     { path: '/routine', label: 'Routine Checks', icon: ClipboardList },

@@ -1,10 +1,19 @@
+<<<<<<< HEAD
 import React, { useState } from 'react';
+=======
+import React, { useState, useRef, useMemo } from 'react';
+>>>>>>> origin/frontend
 import { Patient } from '@/data/mockData';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+<<<<<<< HEAD
 import { Clock, Send, Loader2, Plus } from 'lucide-react';
+=======
+import { Textarea } from '@/components/ui/textarea';
+import { Activity, Clock, FileText, Send, Image as ImageIcon, Loader2, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
+>>>>>>> origin/frontend
 import { useNavigate } from 'react-router-dom';
 import VoiceInputButton from './VoiceInputButton';
 import api from '@/services/api';
@@ -19,16 +28,29 @@ interface CareCardProps {
     onViewProgress: () => void;
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/frontend
 const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { addEvent, getPatientEvents } = useApp();
     const [logText, setLogText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+<<<<<<< HEAD
+=======
+    const [isUploading, setIsUploading] = useState(false);
+>>>>>>> origin/frontend
     const [observationResult, setObservationResult] = useState(null);
     const [isResultModalOpen, setIsResultModalOpen] = useState(false);
     const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
 
+<<<<<<< HEAD
+=======
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+>>>>>>> origin/frontend
     // Helper to determine status color
     const statusColor = patient.status === 'stable' ? 'bg-success' :
         patient.status === 'needs-attention' ? 'bg-warning' : 'bg-urgent';
@@ -91,6 +113,7 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
         }
     };
 
+<<<<<<< HEAD
     return (
         <>
             <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 bg-card rounded-2xl group flex flex-col h-full">
@@ -177,6 +200,163 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                                     {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                 </Button>
                             )}
+=======
+    const handleFileClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await api.post('/api/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            if (res.status === 201) {
+                // Log event for the upload
+                addEvent({
+                    patientId: patient.id,
+                    type: 'image', // Assuming image for now, logic can check file.type
+                    title: 'File Uploaded',
+                    description: `Uploaded: ${file.name}`,
+                    imageUrl: res.data.url
+                });
+
+                toast({
+                    title: "File Uploaded",
+                    description: "File saved to patient history.",
+                    variant: "default"
+                });
+            }
+        } catch (err) {
+            console.error(err);
+            toast({
+                title: "Upload Failed",
+                description: "Could not upload file.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsUploading(false);
+            // Reset input
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    return (
+        <>
+            <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 bg-card rounded-2xl group flex flex-col h-full">
+                <div className="p-3 sm:p-4 md:p-5 flex-1 flex flex-col">
+                    {/* Header - Clickable for Progress */}
+                    <div
+                        className="flex items-start justify-between mb-3 sm:mb-4 cursor-pointer"
+                        onClick={() => navigate(`/patient/${patient.id}`)}
+                    >
+                        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+                            <div className="relative">
+                                <Avatar className="w-12 h-12 sm:w-14 sm:h-14 border-2 sm:border-4 border-background shadow-sm">
+                                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.id}`} />
+                                    <AvatarFallback>{patient.name.substring(0, 2)}</AvatarFallback>
+                                </Avatar>
+                                <div className={`absolute bottom-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-background ${statusColor}`} />
+                            </div>
+                            <div>
+                                <h3 className="text-base sm:text-lg font-bold text-foreground group-hover:text-primary transition-colors">{patient.name}</h3>
+                                <p className="text-xs text-muted-foreground">Room {patient.roomNumber}</p>
+                            </div>
+                        </div>
+                        <Badge variant="outline" className="rounded-full px-1.5 sm:px-2.5 py-0.5 text-[10px] sm:text-xs">
+                            Age {patient.age}
+                        </Badge>
+                    </div>
+
+                    {/* Quick Stats and Add Task */}
+                    <div className="grid grid-cols-2 gap-2 mb-3 sm:mb-4 md:mb-5">
+                        <div className="bg-secondary/40 rounded-lg p-2 sm:p-2.5 flex flex-col items-center justify-center text-center">
+                            <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary mb-0.5 sm:mb-1" />
+                            <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Vitals</span>
+                            <span className="text-xs font-bold text-foreground">Normal</span>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-auto rounded-lg p-2 sm:p-2.5 flex flex-col items-center justify-center bg-primary/5 hover:bg-primary/10 border-primary/20"
+                            onClick={() => setIsAddTaskOpen(true)}
+                        >
+                            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary mb-0.5 sm:mb-1" />
+                            <span className="text-[9px] sm:text-[10px] text-primary font-medium uppercase tracking-wide">Add Task</span>
+                        </Button>
+                    </div>
+
+                    <div className="mt-auto space-y-2 sm:space-y-3">
+                        <div className="relative">
+                            <Textarea
+                                placeholder={`Log for ${patient.name.split(' ')[0]}...`}
+                                className="min-h-[70px] sm:min-h-[80px] resize-none bg-secondary/20 border-secondary focus:bg-background pr-10 text-xs sm:text-sm rounded-xl"
+                                value={logText}
+                                onChange={(e) => setLogText(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                                <VoiceInputButton onTranscription={handleVoiceTranscription} />
+
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    onChange={handleFileChange}
+                                    accept="image/*,.pdf,.doc,.docx"
+                                />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                    title="Upload File"
+                                    onClick={handleFileClick}
+                                    disabled={isUploading}
+                                >
+                                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                                </Button>
+                            </div>
+
+                            <div className="ml-auto flex gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 rounded-full text-muted-foreground hover:text-primary"
+                                    onClick={() => navigate(`/history?patientId=${patient.id}`)}
+                                    title="View History"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 rounded-full text-muted-foreground hover:text-primary"
+                                    onClick={() => navigate(`/routine?patientId=${patient.id}`)}
+                                    title="View Routine Checks"
+                                >
+                                    <Clock className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    className="rounded-lg px-4 shadow-none bg-primary text-primary-foreground hover:bg-primary/90"
+                                    onClick={handleLogSubmit}
+                                    disabled={!logText.trim() || isSubmitting}
+                                >
+                                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                </Button>
+                            </div>
+>>>>>>> origin/frontend
                         </div>
                     </div>
                 </div>

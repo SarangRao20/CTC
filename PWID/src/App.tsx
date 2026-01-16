@@ -8,6 +8,7 @@ import Layout from "@/components/Layout";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import Dashboard from "./pages/Dashboard";
+import NGODashboard from "./pages/NGODashboard";
 import HistoryPage from "./pages/HistoryPage";
 import RoutineChecksPage from "./pages/RoutineChecksPage";
 import ReportPage from "./pages/ReportPage";
@@ -59,6 +60,7 @@ const AppRoutes = () => {
       {/* Protected Routes wrapped in Layer */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/ngo" element={<NGODashboard />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/routine" element={<RoutineChecksPage />} />
         <Route path="/report/:patientId" element={<ReportPage />} />

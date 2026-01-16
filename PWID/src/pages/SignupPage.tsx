@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
+=======
+import React, { useEffect, useState } from 'react';
+>>>>>>> origin/frontend
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -66,9 +70,17 @@ const SignupPage: React.FC = () => {
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
   const [submitting, setSubmitting] = useState(false);
 
+<<<<<<< HEAD
   // Coordinator-specific fields
   const [orgSize, setOrgSize] = useState('');
   const [hasManagementAccess, setHasManagementAccess] = useState(false);
+=======
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+>>>>>>> origin/frontend
 
   const validate = () => {
     const e: { [k: string]: string } = {};

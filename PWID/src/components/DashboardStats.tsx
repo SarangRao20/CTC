@@ -29,9 +29,15 @@ const DashboardStats = () => {
 
     if (loading) {
         return (
+<<<<<<< HEAD
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
                 {[1, 2, 3, 4].map(i => (
                     <Skeleton key={i} className="h-28" />
+=======
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                {[1, 2, 3, 4].map(i => (
+                    <Skeleton key={i} className="h-24 sm:h-28" />
+>>>>>>> origin/frontend
                 ))}
             </div>
         );
@@ -73,6 +79,7 @@ const DashboardStats = () => {
     return (
         <>
             {/* Stats Cards */}
+<<<<<<< HEAD
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
                 {statCards.map((stat, index) => (
                     <Card key={index} className="border-none shadow-sm hover:shadow-md transition-shadow">
@@ -84,6 +91,19 @@ const DashboardStats = () => {
                                 </div>
                                 <div className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
                                     <stat.icon className={`w-6 h-6 ${stat.color}`} />
+=======
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                {statCards.map((stat, index) => (
+                    <Card key={index} className="border-none shadow-sm hover:shadow-md transition-shadow">
+                        <CardContent className="p-3 sm:p-4 md:p-5">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-0.5 sm:mb-1">{stat.title}</p>
+                                    <p className="text-2xl sm:text-3xl font-bold text-foreground">{stat.value}</p>
+                                </div>
+                                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${stat.bgColor} flex items-center justify-center flex-shrink-0`}>
+                                    <stat.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
+>>>>>>> origin/frontend
                                 </div>
                             </div>
                         </CardContent>
@@ -91,7 +111,39 @@ const DashboardStats = () => {
                 ))}
             </div>
 
+<<<<<<< HEAD
 
+=======
+            {/* Quick Status */}
+            <Card className="border-none shadow-sm mb-6 sm:mb-8">
+                <CardContent className="p-3 sm:p-4 md:p-5">
+                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                        <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                        <h3 className="text-sm sm:text-base font-semibold text-foreground">Quick Status</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 rounded-full bg-urgent mt-2" />
+                            <div>
+                                <p className="text-sm font-medium text-foreground">
+                                    {stats.urgentAlerts || 0} patients need immediate attention
+                                </p>
+                                <p className="text-xs text-muted-foreground">Based on pending tasks and recent incidents</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 rounded-full bg-warning mt-2" />
+                            <div>
+                                <p className="text-sm font-medium text-foreground">
+                                    {stats.pendingTasks || 0} routine tasks scheduled for today
+                                </p>
+                                <p className="text-xs text-muted-foreground">Medication, therapy, and care activities</p>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+>>>>>>> origin/frontend
         </>
     );
 };

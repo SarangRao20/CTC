@@ -44,9 +44,10 @@ const SignupPage: React.FC = () => {
   const [loadingChildren, setLoadingChildren] = useState(false);
   const fetchChildren = () => {
     setLoadingChildren(true);
-    api.get('/pwids').then(res => {
+    api.get('/pwid/list').then(res => {
       setChildOptions(res.data.map((p: any) => ({ id: p.id, name: p.full_name })));
-    }).catch(() => {
+    }).catch((err) => {
+      console.error("Failed to fetch children:", err);
       setChildOptions([]);
       toast({ title: "Error", description: "Failed to load children list.", variant: "destructive" });
     }).finally(() => setLoadingChildren(false));
@@ -253,7 +254,6 @@ const SignupPage: React.FC = () => {
                     <SelectContent>
                       <SelectItem value="Caregiver" key="caregiver">Caregiver</SelectItem>
                       <SelectItem value="Parent" key="parent">Parent</SelectItem>
-                      <SelectItem value="Coordinator" key="coordinator">Coordinator/NGO</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

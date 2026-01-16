@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Activity, Moon, Utensils, AlertTriangle, CheckCircle2,
-    ChevronDown, ChevronUp, FileText, Info
+    ChevronDown, ChevronUp, FileText, Info, Phone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -283,7 +283,7 @@ const PatientDashboard = () => {
         mealScore: mealMap[log.meals] || 2,
     })).slice(-14);
 
-    const incidentCount = logs.filter(l => l.incident !== 'None' && l.incident !== 'no' && new Date(l.created_at) >= subDays(new Date(), 1)).length;
+    const incidentCount = logs.filter(l => l.incident !== 'None' && l.incident !== 'no' && new Date(l.created_at) >= subDays(new Date(), 7)).length;
 
     return (
         <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto pb-20">
@@ -292,9 +292,9 @@ const PatientDashboard = () => {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{patient.full_name}</h1>
                     <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                        <Badge variant="outline" className="text-xs">Age: {new Date().getFullYear() - new Date(patient.dob).getFullYear()}</Badge>
+                        <Badge variant="outline" className="text-xs">Age: {patient.age || 'N/A'}</Badge>
                         <span className="text-sm">•</span>
-                        <span className="text-sm">Support Level: High</span>
+                        <span className="text-sm">Support Level: {patient.support_level || 'High'}</span>
                         <span className="text-sm">•</span>
                         <span className="text-xs">Last updated: {format(new Date(), 'HH:mm')}</span>
                     </div>
@@ -354,7 +354,7 @@ const PatientDashboard = () => {
                         <CardContent>
                             <div className="space-y-4">
                                 {[...logs]
-                                    .filter(log => new Date(log.created_at) >= subDays(new Date(), 2))
+                                    .filter(log => new Date(log.created_at) >= subDays(new Date(), 7))
                                     .sort((a, b) => {
                                         const aHasIncident = a.incident !== 'None' && a.incident !== 'no';
                                         const bHasIncident = b.incident !== 'None' && b.incident !== 'no';

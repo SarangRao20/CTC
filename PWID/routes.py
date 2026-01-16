@@ -106,6 +106,7 @@ def register_caretaker():
     caretaker = Caretaker(
         name=data['name'],
         email=data['email'],
+        phone=data.get('phone'),
         password_hash=hashed_password,
         ngo_name=data['ngo_name'],
         role=data['role'],
@@ -315,6 +316,60 @@ def create_log():
     )
     db.session.add(log)
     db.session.commit()
+
+    # --- Twilio Alert Logic ---
+    try:
+        from twilio_service import send_whatsapp_alert
+        from risk_engine import calculate_single_risk
+        
+        pwid = PWID.query.get(log.pwid_id)
+        
+        # 1. Analyze Risk Level immediately
+        # We need to construct an observation dict or pass the log object if it's committed
+        # The risk engine expects dict or object. Since log is committed, we can pass it, 
+        # but calculate_single_risk logic for object access attributes like log.mood etc.
+        risk_result = calculate_single_risk(log)
+        is_high_risk = risk_result.get("level") == "High"
+        has_incident = log.incident and log.incident.lower() not in ['no', 'none']
+
+        # --- PARENT ALERTS (Incidents + High Risk) ---
+        if has_incident or is_high_risk:
+            parent = Parent.query.filter_by(pwid_id=log.pwid_id).first()
+            
+            target_number = None
+            if parent and parent.phone:
+                target_number = parent.phone
+            else:
+                target_number = os.getenv('ALERT_PHONE_NUMBER')
+
+            if target_number:
+                if has_incident:
+                    reason = f"Incident Reported: {log.incident}"
+                else:
+                    reason = f"High Risk Detected: {risk_result.get('reason')}"
+                
+                msg = f"🚨 CareConnect Alert for {pwid.full_name}:\n{reason}.\nMood: {log.mood}, Sleep: {log.sleep_quality}."
+                
+                resp = send_whatsapp_alert(target_number, msg)
+                print(f"Sent Parent Alert to {target_number}")
+
+        # --- CAREGIVER ALERTS (Medicine) ---
+        if log.medication_given and log.medication_given.lower() in ['no', 'skipped']:
+            # Find a caregiver to notify. Ideally the creator, or an admin/coordinator of the NGO.
+            # For simplicity, finding any caregiver with a phone number in the same NGO.
+            caretaker = Caretaker.query.filter(
+                Caretaker.ngo_name == pwid.ngo_name, 
+                Caretaker.phone != None
+            ).first()
+
+            if caretaker and caretaker.phone:
+                med_msg = f"💊 Medication Missed Alert:\nPatient: {pwid.full_name}\nStatus: {log.medication_given}\nNotes: {log.notes}\nPlease follow up immediately."
+                send_whatsapp_alert(caretaker.phone, med_msg)
+                print(f"Sent Caregiver Alert (Meds) to {caretaker.phone}")
+
+    except Exception as e:
+        print(f"Error processing alerts: {e}")
+    # --------------------------
 
     return jsonify({
         "message": "Log created successfully",

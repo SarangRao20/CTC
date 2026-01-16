@@ -13,6 +13,7 @@ UPLOAD_FOLDER = 'static/uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.secret_key = "supersecret_ctc_key"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///pwid.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False

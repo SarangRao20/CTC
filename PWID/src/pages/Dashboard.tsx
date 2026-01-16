@@ -8,7 +8,7 @@ import DashboardStats from '@/components/DashboardStats';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, Phone } from 'lucide-react';
 import { Patient } from '@/data/mockData';
 import UserGuide from '@/components/UserGuide';
 
@@ -88,8 +88,7 @@ const Dashboard = () => {
 
 
       {/* Dashboard Header */}
-      {/* Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-start gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col items-start gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2 w-full">
             <div className="relative flex-1 md:w-64" id="tour-search">
@@ -117,6 +116,13 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
+
+        <a href="tel:108">
+          <Button variant="destructive" className="rounded-xl shadow-lg animate-pulse font-bold">
+            <Phone className="w-4 h-4 mr-2" />
+            SOS Ambulance
+          </Button>
+        </a>
       </div>
 
       {/* Filters Panel */}

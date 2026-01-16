@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash
 
 from app import app
-from models import db, PWID, Caretaker, Task, Event
+from models import db, PWID, Caretaker, Task, Event, Parent
 
 
 def seed_caretakers():
@@ -12,21 +12,24 @@ def seed_caretakers():
             "email": "caregiver@ngo.test",
             "password": "password123",
             "ngo_name": "Sunrise NGO",
-            "role": "admin"
+            "role": "admin",
+            "phone": "+919309896256"
         },
         {
             "name": "Alex Morgan",
             "email": "alex@ngo.test",
             "password": "password123",
             "ngo_name": "CareConnect NGO",
-            "role": "Senior Caregiver"
+            "role": "Caregiver",
+            "phone": "+919309896256"
         },
         {
             "name": "Sarah Connor",
             "email": "sarah@ngo.test",
             "password": "password123",
             "ngo_name": "Sunrise NGO",
-            "role": "Coordinator"
+            "role": "Caregiver",
+            "phone": "+919309896256"
         }
     ]
 
@@ -41,6 +44,7 @@ def seed_caretakers():
             password_hash=generate_password_hash(c["password"]),
             ngo_name=c["ngo_name"],
             role=c["role"],
+            phone=c.get("phone"),
             created_at=datetime.now(timezone.utc)
         )
         db.session.add(caretaker)
@@ -163,6 +167,29 @@ def seed_events():
     db.session.commit()
 
 
+def seed_parents():
+    # Use existing PWID ID 1 (Aarav Sharma)
+    parent_data = {
+        "name": "Sumit Sharma",
+        "email": "sumit@example.com",
+        "phone": "+919309896256", # Placeholder, user can update in DB
+        "password": "password123",
+        "pwid_id": 1 
+    }
+    
+    exists = Parent.query.filter_by(email=parent_data["email"]).first()
+    if not exists:
+        p = Parent(
+            name=parent_data["name"],
+            email=parent_data["email"],
+            phone=parent_data["phone"],
+            password_hash=generate_password_hash(parent_data["password"]),
+            pwid_id=parent_data["pwid_id"],
+            created_at=datetime.now(timezone.utc)
+        )
+        db.session.add(p)
+    db.session.commit()
+
 if __name__ == "__main__":
     with app.app_context():
         print("🌱 Refreshing database schema...")
@@ -173,4 +200,5 @@ if __name__ == "__main__":
         seed_pwid()
         seed_tasks()
         seed_events()
+        seed_parents()
         print("✅ Seeding complete.")

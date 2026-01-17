@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
           <Button variant="ghost" size="icon" className="text-muted-foreground relative" aria-label={`Notifications, ${overdueTasks} urgent`} id="tour-notifications">
             <Bell className="w-5 h-5" />
             {overdueTasks > 0 && (
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-urgent animate-pulse" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-urgent" />
             )}
           </Button>
 

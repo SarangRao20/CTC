@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Activity, Moon, Utensils, AlertTriangle, CheckCircle2,
@@ -167,15 +168,102 @@ const TaskSection = ({ patientId, patientName }: { patientId: string, patientNam
     );
 };
 
-// (Components removed as per simplification request)
+// --- Detailed Analysis Component ---
+const DetailedAnalysis = ({ logs }: { logs: any[] }) => {
+    // Mock Data for Charts (if no logs)
+    const mockData = [
+        { day: 'Mon', mood: 80, sleep: 70 },
+        { day: 'Tue', mood: 65, sleep: 60 },
+        { day: 'Wed', mood: 90, sleep: 85 },
+        { day: 'Thu', mood: 75, sleep: 65 },
+        { day: 'Fri', mood: 85, sleep: 80 },
+        { day: 'Sat', mood: 60, sleep: 50 },
+        { day: 'Sun', mood: 95, sleep: 90 },
+    ];
+
+    return (
+        <Collapsible className="border rounded-xl bg-card">
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 font-semibold hover:bg-secondary/50 transition-colors">
+                <div className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-primary" />
+                    Detailed Analysis (Trends)
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 pt-0">
+                <div className="h-[200px] w-full mt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={mockData}>
+                            <defs>
+                                <linearGradient id="colorMood" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#0d9488" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="day" axisLine={false} tickLine={false} fontSize={12} />
+                            <YAxis axisLine={false} tickLine={false} fontSize={12} />
+                            <Tooltip />
+                            <Area type="monotone" dataKey="mood" stroke="#0d9488" fillOpacity={1} fill="url(#colorMood)" />
+                            <Area type="monotone" dataKey="sleep" stroke="#8b5cf6" fillOpacity={0} fill="transparent" strokeDasharray="5 5" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="flex justify-center gap-6 mt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-primary" /> Mood Score</div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-purple-500" /> Sleep Quality</div>
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
+    );
+};
+
+// --- Incident List Component ---
+const IncidentList = ({ logs }: { logs: any[] }) => {
+    // Filter for incidents (Mock logic: logs with incident !== 'None')
+    const incidents = logs.filter(l => l.incident && l.incident !== 'None' && l.incident !== 'no');
+
+    if (incidents.length === 0) {
+        return (
+            <div className="text-center py-10 border rounded-xl border-dashed">
+                <CheckCircle2 className="w-10 h-10 text-success mx-auto mb-3 opacity-50" />
+                <h3 className="font-semibold">{format(new Date(), 'MMMM')} Update</h3>
+                <p className="text-muted-foreground">No incidents reported this month. Great job!</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {incidents.map((log, i) => (
+                <div key={i} className="flex gap-4 p-4 border rounded-xl bg-card hover:bg-secondary/20 transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-urgent/10 flex items-center justify-center flex-shrink-0 text-urgent">
+                        <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-foreground">{log.incident}</h4>
+                            <Badge variant="outline">{format(new Date(log.created_at), 'MMM d, h:mm a')}</Badge>
+                        </div>
+                        <p className="text-sm text-foreground/80">{log.notes || "No operational notes recorded."}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
 
 // --- Main Page Component ---
 
 const PatientDashboard = () => {
+    const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [patient, setPatient] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("tasks"); // Default to 'tasks'
+    const [informed, setInformed] = useState<Record<string, boolean>>({});
+    const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -194,6 +282,20 @@ const PatientDashboard = () => {
     if (loading) return <div className="p-8"><Skeleton className="h-12 w-1/3" /></div>;
     if (!patient) return <div className="p-8">Patient not found</div>;
 
+    // --- Data for Status Tab (Mock or derived) ---
+    // (In a real app, this would come from API)
+    const logs: any[] = []; // Placeholder for now or fetch logs
+    const risk = { risk_level: 'Low' }; // Placeholder
+    const incidentCount = 0;
+
+    // Helper for Age
+    const getAge = (dob: string) => {
+        if (!dob) return 'N/A';
+        const birthDate = new Date(dob);
+        if (isNaN(birthDate.getTime())) return 'N/A'; // Invalid date
+        return new Date().getFullYear() - birthDate.getFullYear();
+    };
+
     return (
         <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto pb-20">
             {/* Header */}
@@ -201,17 +303,39 @@ const PatientDashboard = () => {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{patient.full_name}</h1>
                     <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                        <Badge variant="outline" className="text-xs">Age: {new Date().getFullYear() - new Date(patient.dob).getFullYear()}</Badge>
+                        <Badge variant="outline" className="text-xs">Age: {getAge(patient.dob)}</Badge>
                         <span className="text-sm">•</span>
                         <span className="text-xs">Last updated: {format(new Date(), 'HH:mm')}</span>
                     </div>
                 </div>
             </div>
 
-            {/* Task Section (Only View) */}
-            <div className="mt-6">
-                <TaskSection patientId={patient.id} patientName={patient.name} />
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 lg:w-[600px] mb-6">
+                    <TabsTrigger value="tasks">Tasks & Routine</TabsTrigger>
+                    <TabsTrigger value="status">Status Overview</TabsTrigger>
+                    <TabsTrigger value="incidents">Incidents</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="tasks">
+                    <TaskSection patientId={patient.id} patientName={patient.full_name} />
+                </TabsContent>
+
+                <TabsContent value="status" className="space-y-6">
+                    <IncidentTextHeader
+                        risk={risk}
+                        incidentCount={incidentCount}
+                        onViewIncident={() => setActiveTab('incidents')}
+                        incidentLogs={logs}
+                    />
+                    <TodaysStatus logs={logs} patientName={patient.full_name} />
+                    <DetailedAnalysis logs={logs} />
+                </TabsContent>
+
+                <TabsContent value="incidents">
+                    <IncidentList logs={logs} />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 };

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/context/AppContext';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from '@/components/ui/button';
 import {
   Heart,
   LayoutDashboard,
@@ -19,9 +20,11 @@ import {
   LogOut,
   User,
   Settings,
+  Building2,
   Moon,
   Sun
 } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface HeaderProps {
   isDark?: boolean;
@@ -29,6 +32,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
+  const { t } = useTranslation();
   const { caregiver, logout, tasks } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,10 +44,20 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
 
   const overdueTasks = tasks ? tasks.filter(t => t.status === 'overdue').length : 0;
 
-  const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/history', label: 'History', icon: History },
+  const allNavItems = [
+    { path: '/ngo', label: t('ngo_management'), icon: Building2, roles: ['organization'] },
+    { path: '/dashboard', label: t('dashboard'), icon: LayoutDashboard, roles: ['all'] },
+    { path: '/history', label: t('view_history'), icon: History, roles: ['all'] },
+    { path: '/routine', label: t('routine_checks'), icon: ClipboardList, roles: ['all'] },
   ];
+
+  const navItems = allNavItems.filter(item => {
+    if (item.roles.includes('all')) return true;
+    if (item.roles.includes('organization')) {
+      return caregiver?.role?.toLowerCase() === 'organization';
+    }
+    return true;
+  });
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
@@ -55,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
               <Heart className="w-5 h-5" />
             </div>
-            <span className="hidden sm:inline-block">CareConnect</span>
+            <span className="hidden sm:inline-block">{t('app_name')}</span>
           </Link>
         </div>
 
@@ -79,6 +93,8 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
 
         {/* Actions */}
         <div className="flex items-center gap-2 md:gap-4">
+          <LanguageSwitcher />
+
           {toggleTheme && (
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground hover:text-foreground">
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -88,7 +104,7 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
           <Button variant="ghost" size="icon" className="text-muted-foreground relative" aria-label={`Notifications, ${overdueTasks} urgent`} id="tour-notifications">
             <Bell className="w-5 h-5" />
             {overdueTasks > 0 && (
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-urgent" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-urgent animate-pulse" />
             )}
           </Button>
 
@@ -105,15 +121,15 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('my_account')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <Settings className="mr-2 w-4 h-4" />
-                <span>Settings</span>
+                <span>{t('settings')}</span>
               </DropdownMenuItem>
               <DropdownMenuItem className="text-urgent focus:text-urgent" onClick={handleLogout}>
                 <LogOut className="mr-2 w-4 h-4" />
-                <span>Log out</span>
+                <span>{t('logout')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

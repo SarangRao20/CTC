@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import CareCard from '@/components/CareCard';
 import ProgressModal from '@/components/ProgressModal';
 import DashboardStats from '@/components/DashboardStats';
+import VoiceInputButton from '@/components/VoiceInputButton';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -106,15 +107,28 @@ const Dashboard = () => {
                 </button>
               )}
             </div>
-            <Button
-              variant={showFilters ? 'secondary' : 'outline'}
-              size="icon"
-              className="rounded-xl border-none shadow-sm bg-card shrink-0"
-              onClick={() => setShowFilters(!showFilters)}
-              id="tour-filters"
-            >
-              <Filter className={`w-4 h-4 ${showFilters ? 'text-primary' : 'text-muted-foreground'}`} />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={showFilters ? 'secondary' : 'outline'}
+                size="icon"
+                className="rounded-xl border-none shadow-sm bg-card shrink-0"
+                onClick={() => setShowFilters(!showFilters)}
+                id="tour-filters"
+              >
+                <Filter className={`w-4 h-4 ${showFilters ? 'text-primary' : 'text-muted-foreground'}`} />
+              </Button>
+
+              {/* Global Voice Command Button */}
+              <div className="relative flex items-center gap-2">
+                <span className="hidden md:inline-block text-sm font-medium text-muted-foreground">Voice Task:</span>
+                <VoiceInputButton
+                  onTranscription={(text) => {
+                    console.log("Voice Command Received:", text);
+                    alert(`Voice Command Processed:\nAdded task from: "${text}"`);
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

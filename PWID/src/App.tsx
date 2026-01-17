@@ -9,7 +9,6 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import Dashboard from "./pages/Dashboard";
 import HistoryPage from "./pages/HistoryPage";
-import RoutineChecksPage from "./pages/RoutineChecksPage";
 import ReportPage from "./pages/ReportPage";
 import PatientDashboard from "./pages/PatientDashboard";
 import ParentDashboard from "./pages/ParentDashboard";
@@ -60,7 +59,6 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/history" element={<HistoryPage />} />
-        <Route path="/routine" element={<RoutineChecksPage />} />
         <Route path="/report/:patientId" element={<ReportPage />} />
         <Route path="/patient/:id" element={<PatientDashboard />} />
       </Route>

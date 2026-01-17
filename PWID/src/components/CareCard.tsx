@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Clock, Send, Loader2, Plus } from 'lucide-react';
+import { Clock, Send, Loader2, Plus, FileText, ListTodo, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import VoiceInputButton from './VoiceInputButton';
 import api from '@/services/api';
@@ -27,7 +27,6 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [observationResult, setObservationResult] = useState(null);
     const [isResultModalOpen, setIsResultModalOpen] = useState(false);
-    const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
 
     // Helper to determine status color
     const statusColor = patient.status === 'stable' ? 'bg-success' :
@@ -46,7 +45,21 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
 
 
     const handleVoiceTranscription = (text: string) => {
-        setLogText(prev => prev ? `${prev} ${text}` : text);
+        // Simple heuristic: If text starts with "Task" or "Remind", treat as task
+        const lowerText = text.toLowerCase().trim();
+        if (lowerText.startsWith("task") || lowerText.startsWith("remind") || lowerText.startsWith("add task")) {
+            // Mock Task Addition
+            toast({
+                title: "Voice Task Added",
+                description: `Task created: "${text}"`,
+                variant: "default"
+            });
+            // Clear log text in case it was partially set
+            setLogText("");
+        } else {
+            // Standard Observation Log
+            setLogText(prev => prev ? `${prev} ${text}` : text);
+        }
     };
 
     const handleLogSubmit = async () => {
@@ -97,11 +110,11 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                 <div className="p-4 flex-1 flex flex-col justify-between">
                     {/* Header: Identity + Risk + Last Check-in */}
                     <div>
-                        <div
-                            className="flex items-start justify-between mb-3 cursor-pointer"
-                            onClick={() => navigate(`/patient/${patient.id}`)}
-                        >
-                            <div className="flex items-center gap-3">
+                        <div className="flex items-start justify-between mb-3">
+                            <div
+                                className="flex items-center gap-3 cursor-pointer"
+                                onClick={() => navigate(`/patient/${patient.id}`)}
+                            >
                                 <div className="relative">
                                     <Avatar className="w-10 h-10 border-2 border-background shadow-sm">
                                         <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${patient.id}`} />
@@ -115,6 +128,18 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                                     <p className="text-[10px] text-muted-foreground">Room {patient.roomNumber}</p>
                                 </div>
                             </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                title="View History"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/history?patientId=${patient.id}`);
+                                }}
+                            >
+                                <History className="w-4 h-4" />
+                            </Button>
                         </div>
 
                         {/* Risk & Last Check-in */}
@@ -135,8 +160,8 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                         </div>
                     </div>
 
-                    {/* Input Section: Voice Only focused */}
                     <div className="mt-auto">
+
                         {logText && (
                             <div className="mb-2 p-2 bg-secondary/20 rounded-lg text-xs italic text-muted-foreground relative">
                                 "{logText}"
@@ -160,11 +185,31 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                    title="Add Task"
-                                    onClick={() => setIsAddTaskOpen(true)}
+                                    title="View Tasks"
+                                    onClick={() => navigate(`/patient/${patient.id}?tab=tasks`)}
                                 >
-                                    <Plus className="w-4 h-4" />
+                                    <ListTodo className="w-4 h-4" />
                                 </Button>
+
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                    title="Add File/Report"
+                                    onClick={() => document.getElementById(`file-upload-${patient.id}`)?.click()}
+                                >
+                                    <FileText className="w-4 h-4" />
+                                </Button>
+                                <input
+                                    type="file"
+                                    id={`file-upload-${patient.id}`}
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        if (e.target.files?.[0]) {
+                                            toast({ title: "File Added", description: `${e.target.files[0].name} attached to ${patient.name}.` });
+                                        }
+                                    }}
+                                />
                             </div>
 
                             {logText && (
@@ -180,19 +225,12 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
                         </div>
                     </div>
                 </div>
-            </Card>
+            </Card >
 
             <ObservationResultModal
                 isOpen={isResultModalOpen}
                 onClose={() => setIsResultModalOpen(false)}
                 data={observationResult}
-            />
-
-            <AddTaskModal
-                isOpen={isAddTaskOpen}
-                onClose={() => setIsAddTaskOpen(false)}
-                patientId={patient.id}
-                patientName={patient.name}
             />
         </>
     );

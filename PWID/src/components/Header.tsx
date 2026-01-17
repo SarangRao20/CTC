@@ -43,7 +43,6 @@ const Header: React.FC<HeaderProps> = ({ isDark, toggleTheme }) => {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/history', label: 'History', icon: History },
-    { path: '/routine', label: 'Routine Checks', icon: ClipboardList },
   ];
 
   return (

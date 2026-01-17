@@ -61,9 +61,9 @@ const HistoryPage = () => {
     return list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [events, patientIdFilter, typeFilter, dateFilter]);
 
-  // Analytics for full history (coordinators)
+  // Analytics for history (works for both full and filtered view)
   const analytics = useMemo(() => {
-    if (patientIdFilter) return null;
+    // if (patientIdFilter) return null; // Removed to show stats for single patient too
 
     const incidentCount = filteredEvents.filter(e => e.type === 'incident').length;
     const voiceCount = filteredEvents.filter(e => e.type === 'voice').length;
@@ -135,8 +135,8 @@ const HistoryPage = () => {
     <div className="min-h-screen bg-background">
 
       <main className="max-w-4xl mx-auto p-4 md:p-6">
-        {/* Analytics Cards (for full history / coordinators only) */}
-        {!patientIdFilter && analytics && (
+        {/* Analytics Cards (visible for both filtered and full history) */}
+        {analytics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardHeader className="pb-2">

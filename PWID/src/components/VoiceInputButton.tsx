@@ -170,10 +170,11 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({ onTranscription, di
 
   return (
     <Button
-      variant={isListening ? 'media-active' : 'media'}
-      size="icon-lg"
+      variant={isListening ? 'destructive' : 'ghost'} // semantic colors for clearer state
+      size="icon" // smaller standard size
       onClick={isListening ? stopListening : startListening}
       disabled={disabled || isProcessing}
+      title={isListening ? t('stop_recording') : t('start_recording')}
       aria-label={
         isListening
           ? t('stop_recording')
@@ -182,17 +183,14 @@ const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({ onTranscription, di
             : t('start_recording')
       }
       aria-pressed={isListening}
-      className="relative"
+      className={`relative h-8 w-8 rounded-full ${isListening ? 'animate-none' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
     >
       {isProcessing ? (
-        <Loader2 className="w-6 h-6 animate-spin" />
+        <Loader2 className="w-4 h-4 animate-spin" />
       ) : isListening ? (
-        <>
-          <MicOff className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-urgent rounded-full animate-pulse" />
-        </>
+        <MicOff className="w-4 h-4" />
       ) : (
-        <Mic className="w-6 h-6" />
+        <Mic className="w-4 h-4" />
       )}
     </Button>
   );

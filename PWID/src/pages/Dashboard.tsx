@@ -134,7 +134,7 @@ const Dashboard = () => {
         </div>
 
         <a href="tel:108">
-          <Button variant="destructive" className="rounded-xl shadow-lg animate-pulse font-bold">
+          <Button variant="destructive" size="sm" className="rounded-xl shadow-lg font-bold h-9">
             <Phone className="w-4 h-4 mr-2" />
             {t('sos')}
           </Button>

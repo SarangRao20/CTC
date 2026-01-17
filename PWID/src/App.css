@@ -1,19 +1,23 @@
 #root {
-  max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(0.5rem, 3vw, 2rem);
 }
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: clamp(4rem, 8vw, 6rem);
+  padding: clamp(0.75rem, 2vw, 1.5rem);
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -34,9 +38,27 @@
 }
 
 .card {
-  padding: 2em;
+  padding: clamp(1rem, 3vw, 2rem);
 }
 
 .read-the-docs {
   color: #888;
 }
+
+html {
+  font-size: clamp(14px, 2vw, 16px);
+}
+
+button, a, input[type="button"], input[type="submit"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+body, html {
+  overflow-x: hidden;
+}}

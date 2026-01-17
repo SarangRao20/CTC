@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Patient, Task, HistoryEvent } from '@/data/mockData';
 import { useApp } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,7 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
   events,
   onViewProgress,
 }) => {
+  const { t } = useTranslation();
   const { completeTask, deleteTask, addEvent } = useApp();
   const { toast } = useToast();
   const [observationResult, setObservationResult] = useState(null);
@@ -46,7 +48,7 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
     addEvent({
       patientId: patient.id,
       type: 'voice',
-      title: 'Voice Note',
+      title: t('voice_note'),
       description: transcription,
       voiceTranscription: transcription,
     });
@@ -66,8 +68,8 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
     } catch (error) {
       console.error("Observation failed", error);
       toast({
-        title: "Analysis Failed",
-        description: "Could not analyze the observation with AI.",
+        title: t('error_analysis_failed'),
+        description: t('error_analysis_desc'),
         variant: "destructive"
       });
     }
@@ -77,8 +79,8 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
     addEvent({
       patientId: patient.id,
       type: 'image',
-      title: 'Photo Captured',
-      description: `Image: ${file.name}`,
+      title: t('photo_captured'),
+      description: `${t('image')}: ${file.name}`,
       imageUrl: preview,
     });
   };
@@ -87,9 +89,9 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
   const recentEvents = events.slice(0, 3);
 
   const statusLabel = {
-    stable: 'Stable',
-    'needs-attention': 'Needs Attention',
-    urgent: 'Urgent',
+    stable: t('stable'),
+    'needs-attention': t('needs_attention'),
+    urgent: t('urgent'),
   };
 
   return (
@@ -133,11 +135,11 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                Age {patient.age}
+                {t('age')} {patient.age}
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" />
-                Room {patient.roomNumber}
+                {t('room')} {patient.roomNumber}
               </span>
             </div>
           </div>
@@ -148,7 +150,7 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
           <VoiceInputButton onTranscription={handleVoiceNote} />
           <ImageUploadButton onImageCapture={handleImageCapture} />
           <Button variant="action-secondary" onClick={onViewProgress} className="flex-1">
-            View Full Progress
+            {t('view_full_progress')}
           </Button>
         </div>
       </div>
@@ -158,15 +160,15 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
         {/* Medications & Allergies */}
         <section>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            Medical Info
+            {t('medical_info')}
           </h3>
           <div className="grid gap-3">
             <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-xl">
               <Pill className="w-5 h-5 text-primary mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground mb-1">Medications</p>
+                <p className="text-sm font-medium text-foreground mb-1">{t('medications')}</p>
                 <p className="text-sm text-muted-foreground">
-                  {patient.medications.join(', ') || 'None'}
+                  {patient.medications.join(', ') || t('none')}
                 </p>
               </div>
             </div>
@@ -174,7 +176,7 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
               <div className="flex items-start gap-3 p-3 bg-urgent-light/50 rounded-xl">
                 <AlertCircle className="w-5 h-5 text-urgent mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-urgent mb-1">Allergies</p>
+                  <p className="text-sm font-medium text-urgent mb-1">{t('allergies')}</p>
                   <p className="text-sm text-urgent/80">
                     {patient.allergies.join(', ')}
                   </p>
@@ -188,14 +190,14 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
         <section>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Pending Tasks
+              {t('pending_tasks')}
             </h3>
             <Badge variant="secondary">{pendingTasks.length}</Badge>
           </div>
           <div className="space-y-2">
             {pendingTasks.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No pending tasks
+                {t('no_pending_tasks')}
               </p>
             ) : (
               pendingTasks.map(task => (
@@ -218,7 +220,7 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
                       {task.title}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Due: {task.dueTime}
+                      {t('due')}: {task.dueTime}
                     </p>
                   </div>
                   <Button
@@ -228,14 +230,14 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
                     className="flex-shrink-0"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span className="sr-only">Complete task</span>
+                    <span className="sr-only">{t('complete_task')}</span>
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mr-2"
                     onClick={() => {
-                      if (confirm('Delete this task?')) deleteTask(task.id);
+                      if (confirm(t('confirm_delete_task_short'))) deleteTask(task.id);
                     }}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -249,12 +251,12 @@ const PatientDetailPane: React.FC<PatientDetailPaneProps> = ({
         {/* Recent Activity */}
         <section>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            Recent Activity
+            {t('recent_activity')}
           </h3>
           <div className="space-y-3">
             {recentEvents.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No recent activity
+                {t('no_recent_activity')}
               </p>
             ) : (
               recentEvents.map(event => (

@@ -12,13 +12,47 @@ routes_bp = Blueprint('routes', __name__)
 
 @routes_bp.route('/ngos', methods=['GET'])
 def get_ngos():
-    # Only return NGOs that have at least one PWID patient
-    ngo_names = [n[0] for n in db.session.query(PWID.ngo_name).distinct().all() if n[0]]
-    return jsonify(sorted(list(set(ngo_names))))
+    ngos = NGO.query.all()
+    return jsonify([{
+        'id': n.id,
+        'name': n.name,
+        'type': n.type,
+        'address': n.address,
+        'created_at': n.created_at.isoformat()
+    } for n in ngos])
+
+@routes_bp.route('/ngo/<string:name>', methods=['GET'])
+def get_ngo_details(name):
+    ngo = NGO.query.filter_by(name=name).first()
+    if not ngo:
+        return jsonify({'error': 'NGO not found'}), 404
+    
+    # Calculate stats
+    caretaker_count = Caretaker.query.filter_by(ngo_name=name).count()
+    patient_count = PWID.query.filter_by(ngo_name=name).count()
+    
+    return jsonify({
+        'id': ngo.id,
+        'name': ngo.name,
+        'type': ngo.type,
+        'address': ngo.address,
+        'created_at': ngo.created_at.isoformat(),
+        'stats': {
+            'caretakers': caretaker_count,
+            'patients': patient_count
+        }
+    })
 
 @routes_bp.route('/pwids', methods=['GET'])
+@routes_bp.route('/pwid/list', methods=['GET'])
 def get_pwids():
-    pwids = PWID.query.all()
+    ngo_filter = request.args.get('ngo')
+    
+    query = PWID.query
+    if ngo_filter:
+        query = query.filter_by(ngo_name=ngo_filter)
+        
+    pwids = query.all()
     pwid_list = [{
         'id': pwid.id,
         'full_name': pwid.full_name,
@@ -93,19 +127,27 @@ def register_caretaker():
         return jsonify({'error': 'Email already exists'}), 400
     
     # Create or Get NGO
+    # NGO Management Logic
     ngo = NGO.query.filter_by(name=data['ngo_name']).first()
-    if not ngo:
-        # If NGO doesn't exist, create it (assuming data provides type/address for new NGOs)
-        ngo_type = data.get('ngo_type', 'residential') # Default to residential if not key
-        ngo_address = data.get('ngo_address', '')
-        ngo = NGO(name=data['ngo_name'], type=ngo_type, address=ngo_address)
-        db.session.add(ngo)
-        db.session.commit()
+    
+    if data.get('role') == 'Organization':
+        # Organization Admin can create a new NGO
+        if not ngo:
+            ngo_type = data.get('ngo_type', 'residential')
+            ngo_address = data.get('ngo_address', '')
+            ngo = NGO(name=data['ngo_name'], type=ngo_type, address=ngo_address)
+            db.session.add(ngo)
+            db.session.commit()
+    else:
+        # Caregivers MUST select an existing NGO
+        if not ngo:
+            return jsonify({'error': 'NGO not found. Please select a valid NGO from the list.'}), 400
 
     hashed_password = generate_password_hash(data['password'])
     caretaker = Caretaker(
         name=data['name'],
         email=data['email'],
+        phone=data.get('phone'),
         password_hash=hashed_password,
         ngo_name=data['ngo_name'],
         role=data['role'],
@@ -315,6 +357,60 @@ def create_log():
     )
     db.session.add(log)
     db.session.commit()
+
+    # --- Twilio Alert Logic ---
+    try:
+        from twilio_service import send_whatsapp_alert
+        from risk_engine import calculate_single_risk
+        
+        pwid = PWID.query.get(log.pwid_id)
+        
+        # 1. Analyze Risk Level immediately
+        # We need to construct an observation dict or pass the log object if it's committed
+        # The risk engine expects dict or object. Since log is committed, we can pass it, 
+        # but calculate_single_risk logic for object access attributes like log.mood etc.
+        risk_result = calculate_single_risk(log)
+        is_high_risk = risk_result.get("level") == "High"
+        has_incident = log.incident and log.incident.lower() not in ['no', 'none']
+
+        # --- PARENT ALERTS (Incidents + High Risk) ---
+        if has_incident or is_high_risk:
+            parent = Parent.query.filter_by(pwid_id=log.pwid_id).first()
+            
+            target_number = None
+            if parent and parent.phone:
+                target_number = parent.phone
+            else:
+                target_number = os.getenv('ALERT_PHONE_NUMBER')
+
+            if target_number:
+                if has_incident:
+                    reason = f"Incident Reported: {log.incident}"
+                else:
+                    reason = f"High Risk Detected: {risk_result.get('reason')}"
+                
+                msg = f"🚨 CareConnect Alert for {pwid.full_name}:\n{reason}.\nMood: {log.mood}, Sleep: {log.sleep_quality}."
+                
+                resp = send_whatsapp_alert(target_number, msg)
+                print(f"Sent Parent Alert to {target_number}")
+
+        # --- CAREGIVER ALERTS (Medicine) ---
+        if log.medication_given and log.medication_given.lower() in ['no', 'skipped']:
+            # Find a caregiver to notify. Ideally the creator, or an admin/coordinator of the NGO.
+            # For simplicity, finding any caregiver with a phone number in the same NGO.
+            caretaker = Caretaker.query.filter(
+                Caretaker.ngo_name == pwid.ngo_name, 
+                Caretaker.phone != None
+            ).first()
+
+            if caretaker and caretaker.phone:
+                med_msg = f"💊 Medication Missed Alert:\nPatient: {pwid.full_name}\nStatus: {log.medication_given}\nNotes: {log.notes}\nPlease follow up immediately."
+                send_whatsapp_alert(caretaker.phone, med_msg)
+                print(f"Sent Caregiver Alert (Meds) to {caretaker.phone}")
+
+    except Exception as e:
+        print(f"Error processing alerts: {e}")
+    # --------------------------
 
     return jsonify({
         "message": "Log created successfully",
@@ -751,8 +847,8 @@ def voice_transcribe():
         
         if "error" in result:
              return jsonify(result), 500
-             
-
+        
+        return jsonify(result), 200
 @routes_bp.route('/parent/register', methods=['POST'])
 def register_parent():
     data = request.get_json()
@@ -874,3 +970,29 @@ def track_confirm():
     db.session.commit()
     
     return jsonify({'message': 'Arrival confirmed'}), 200
+
+@routes_bp.route('/api/voice/transcribe', methods=['POST'])
+def transcribe_voice_endpoint():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    try:
+        # Read file bytes directly for the service
+        audio_data = file.read()
+        if not audio_data:
+             return jsonify({'error': 'Empty file'}), 400
+
+        result = transcribe_audio(audio_data)
+        
+        if result.get('error'):
+             return jsonify(result), 400
+             
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"Transcription endpoint error: {e}")
+        return jsonify({'error': str(e)}), 500

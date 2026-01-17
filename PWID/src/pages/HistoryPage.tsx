@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,7 @@ import { HistoryEvent } from '@/data/mockData';
 
 
 const HistoryPage = () => {
+  const { t } = useTranslation();
   const { events, patients, caregiver } = useApp();
   const [searchParams] = useSearchParams();
   const patientIdFilter = searchParams.get('patientId');
@@ -78,7 +80,7 @@ const HistoryPage = () => {
   }, [filteredEvents, patientIdFilter]);
 
   const getPatientName = (patientId: string) => {
-    return patients.find(p => p.id === patientId)?.name || 'Unknown Patient';
+    return patients.find(p => p.id === patientId)?.name || t('unknown_patient');
   };
 
   const getEventIcon = (type: HistoryEvent['type']) => {
@@ -93,20 +95,21 @@ const HistoryPage = () => {
 
   const getEventBadge = (type: HistoryEvent['type']) => {
     switch (type) {
-      case 'voice': return <Badge variant="info">Voice</Badge>;
-      case 'image': return <Badge variant="secondary">Image</Badge>;
-      case 'vitals': return <Badge variant="stable">Vitals</Badge>;
-      case 'medication': return <Badge variant="default">Medication</Badge>;
-      case 'incident': return <Badge variant="urgent">Incident</Badge>;
-      default: return <Badge variant="secondary">Note</Badge>;
+      case 'voice': return <Badge variant="info">{t('voice')}</Badge>;
+      case 'image': return <Badge variant="secondary">{t('images')}</Badge>;
+      case 'vitals': return <Badge variant="stable">{t('vitals')}</Badge>;
+      case 'medication': return <Badge variant="default">{t('medication')}</Badge>;
+      case 'incident': return <Badge variant="urgent">{t('incident')}</Badge>;
+      default: return <Badge variant="secondary">{t('notes')}</Badge>;
     }
   };
 
   const handleExport = () => {
+    // ... (export logic keeps English as CSV usually needs standard headers or can be translated too, but typically English is safer for data processing. I'll leave as is for now or translate headers if needed. Let's translate headers for consistency if user wants "saara text".)
     if (filteredEvents.length === 0) return;
 
     // CSV Header
-    const headers = ['Date', 'Time', 'Patient', 'Type', 'Title', 'Description', 'Caregiver'];
+    const headers = [t('date'), t('time'), t('patient'), t('type'), t('title'), t('description'), t('caregiver')];
     const rows = filteredEvents.map(e => {
       const d = new Date(e.timestamp);
       return [
@@ -140,7 +143,7 @@ const HistoryPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Events</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('total_events')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{analytics.totalEvents}</div>
@@ -148,7 +151,7 @@ const HistoryPage = () => {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Incidents</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('incidents')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
@@ -159,7 +162,7 @@ const HistoryPage = () => {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Voice Notes</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('voice_notes')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
@@ -170,7 +173,7 @@ const HistoryPage = () => {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Vitals Checks</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('vitals_checks')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
@@ -186,20 +189,20 @@ const HistoryPage = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {patientIdFilter ? `History: ${getPatientName(patientIdFilter)}` : 'Full History'}
+              {patientIdFilter ? `${t('history')}: ${getPatientName(patientIdFilter)}` : t('full_history')}
             </h1>
             <p className="text-muted-foreground">
-              {patientIdFilter ? 'Events recorded for this resident' : 'All recorded events across patients'}
+              {patientIdFilter ? t('events_for_resident') : t('all_events_desc')}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
-              {filteredEvents.length} events
+              {filteredEvents.length} {t('events').toLowerCase()}
             </div>
             <Button variant="outline" size="sm" onClick={handleExport} disabled={filteredEvents.length === 0} className="gap-2">
               <Download className="w-4 h-4" />
-              Export Report
+              {t('export_report')}
             </Button>
           </div>
         </div>
@@ -210,35 +213,35 @@ const HistoryPage = () => {
             <Filter className="w-4 h-4 text-muted-foreground" />
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Event type" />
+                <SelectValue placeholder={t('event_type')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="voice">Voice Notes</SelectItem>
-                <SelectItem value="image">Images</SelectItem>
-                <SelectItem value="vitals">Vitals</SelectItem>
-                <SelectItem value="medication">Medication</SelectItem>
-                <SelectItem value="incident">Incidents</SelectItem>
-                <SelectItem value="note">Notes</SelectItem>
+                <SelectItem value="all">{t('all')}</SelectItem>
+                <SelectItem value="voice">{t('voice')}</SelectItem>
+                <SelectItem value="image">{t('images')}</SelectItem>
+                <SelectItem value="vitals">{t('vitals')}</SelectItem>
+                <SelectItem value="medication">{t('medication')}</SelectItem>
+                <SelectItem value="incident">{t('incidents')}</SelectItem>
+                <SelectItem value="note">{t('notes')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Select value={dateFilter} onValueChange={setDateFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Date range" />
+              <SelectValue placeholder={t('date_range')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="24hours">Last 24 hours</SelectItem>
-              <SelectItem value="7days">Last 7 days</SelectItem>
-              <SelectItem value="30days">Last 30 days</SelectItem>
-              <SelectItem value="all">All time</SelectItem>
+              <SelectItem value="24hours">{t('last_24h')}</SelectItem>
+              <SelectItem value="7days">{t('last_7d')}</SelectItem>
+              <SelectItem value="30days">{t('last_30d')}</SelectItem>
+              <SelectItem value="all">{t('all_time')}</SelectItem>
             </SelectContent>
           </Select>
 
           {(typeFilter !== 'all' || dateFilter !== '7days') && (
             <Button variant="ghost" size="sm" onClick={() => { setTypeFilter('all'); setDateFilter('7days'); }}>
-              Clear filters
+              {t('clear_filters')}
             </Button>
           )}
         </div>
@@ -249,7 +252,7 @@ const HistoryPage = () => {
           {filteredEvents.length === 0 ? (
             <div className="text-center py-16">
               <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground">No history events recorded yet.</p>
+              <p className="text-muted-foreground">{t('no_history')}</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
@@ -307,22 +310,22 @@ const HistoryPage = () => {
                           <div className="flex flex-wrap gap-4 text-sm">
                             {event.vitals.temperature && (
                               <span className="text-foreground">
-                                <span className="text-muted-foreground">Temp:</span> {event.vitals.temperature}°F
+                                <span className="text-muted-foreground">{t('temp')}:</span> {event.vitals.temperature}°F
                               </span>
                             )}
                             {event.vitals.heartRate && (
                               <span className="text-foreground">
-                                <span className="text-muted-foreground">HR:</span> {event.vitals.heartRate} bpm
+                                <span className="text-muted-foreground">{t('hr')}:</span> {event.vitals.heartRate} bpm
                               </span>
                             )}
                             {event.vitals.bloodPressure && (
                               <span className="text-foreground">
-                                <span className="text-muted-foreground">BP:</span> {event.vitals.bloodPressure}
+                                <span className="text-muted-foreground">{t('bp')}:</span> {event.vitals.bloodPressure}
                               </span>
                             )}
                             {event.vitals.weight && (
                               <span className="text-foreground">
-                                <span className="text-muted-foreground">Weight:</span> {event.vitals.weight} lbs
+                                <span className="text-muted-foreground">{t('weight')}:</span> {event.vitals.weight} lbs
                               </span>
                             )}
                           </div>

@@ -11,6 +11,7 @@ import {
     Activity, Moon, Utensils, Smile, Calendar, Phone
 } from 'lucide-react';
 import ParentUserGuide from '@/components/ParentUserGuide';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface TrackingStatus {
     status: 'in_transit' | 'arrived' | 'overdue' | 'no_record';
@@ -99,6 +100,7 @@ const ParentDashboard: React.FC = () => {
                         <p className="text-slate-500">Monitoring <span className="font-semibold text-primary">{childInfo?.full_name}</span></p>
                     </div>
                     <div className="flex gap-2">
+                        <LanguageSwitcher />
                         <Button variant="outline" className="gap-2">
                             <Phone className="w-4 h-4" /> Contact NGO
                         </Button>
@@ -197,18 +199,21 @@ const ParentDashboard: React.FC = () => {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 text-center">
-                                <div className="inline-flex items-center justify-center w-24 h-24 rounded-full border-4 mb-4
-                                    ${riskData?.level === 'Low' ? 'border-green-100 bg-green-50 text-green-600' : 
-                                      riskData?.level === 'Medium' ? 'border-yellow-100 bg-yellow-50 text-yellow-600' : 
-                                      'border-red-100 bg-red-50 text-red-600'}">
+                                <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full border-4 mb-4
+                                    ${riskData?.level === 'Low' ? 'border-green-100 bg-green-50 text-green-600' :
+                                        riskData?.level === 'Medium' ? 'border-yellow-100 bg-yellow-50 text-yellow-600' :
+                                            'border-red-100 bg-red-50 text-red-600'}`}>
                                     <span className="text-xl font-bold">{riskData?.level || 'N/A'}</span>
                                 </div>
-                                <p className="text-sm text-slate-500 mb-6">
+                                <p className="text-sm font-medium text-slate-800 mb-1">
+                                    {riskData?.reason || 'Analysis pending...'}
+                                </p>
+                                <p className="text-xs text-slate-500 mb-6">
                                     Based on recent sleep, mood, and behavioural patterns.
                                 </p>
-                                <div className="space-y-2 text-left">
+                                <div className="space-y-3 text-left bg-slate-50 p-4 rounded-lg">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">Sleep Score</span>
+                                        <span className="text-slate-500">Sleep Pattern</span>
                                         <span className="font-medium">{riskData?.factors?.sleep || 'N/A'}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
@@ -216,6 +221,19 @@ const ParentDashboard: React.FC = () => {
                                         <span className="font-medium">{riskData?.factors?.mood || 'N/A'}</span>
                                     </div>
                                 </div>
+
+                                {riskData?.details && riskData.details.length > 0 && (
+                                    <div className="mt-4 text-left border-t border-slate-100 pt-4">
+                                        <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Key Observations</h4>
+                                        <ul className="space-y-1">
+                                            {riskData.details.map((detail: string, i: number) => (
+                                                <li key={i} className="text-xs text-slate-600 flex gap-2">
+                                                    <span className="text-red-400">•</span> {detail}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
 

@@ -2,31 +2,65 @@ from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash
 
 from app import app
-from models import db, PWID, Caretaker, Task, Event
+from models import db, PWID, Caretaker, Task, Event, Parent, NGO
+
+
+def seed_ngos():
+    ngos = [
+        {"name": "Sunrise NGO", "type": "residential", "address": "123 Sunshine Blvd, Pune"},
+        {"name": "CareConnect NGO", "type": "non-residential", "address": "456 Care Lane, Mumbai"},
+        {"name": "HopeCare", "type": "residential", "address": "789 Hope St, Delhi"},
+        {"name": "Sahara Foundation", "type": "non-residential", "address": "101 Desert Rd, Jaipur"},
+    ]
+
+    for n in ngos:
+        exists = NGO.query.filter_by(name=n["name"]).first()
+        if exists:
+            continue
+        
+        ngo = NGO(
+            name=n["name"],
+            type=n["type"],
+            address=n["address"]
+        )
+        db.session.add(ngo)
+    
+    db.session.commit()
 
 
 def seed_caretakers():
     caretakers = [
         {
-            "name": "Primary Caregiver",
+            "name": "Primary Access",
             "email": "caregiver@ngo.test",
             "password": "password123",
             "ngo_name": "Sunrise NGO",
-            "role": "admin"
+            "role": "Caregiver",
+            "phone": "+919309896256"
+        },
+        {
+            "name": "Organization Admin",
+            "email": "admin@sunrise.org",
+            "password": "password123",
+            "ngo_name": "Sunrise NGO",
+            "role": "Organization",
+            "phone": "+919421140800"
         },
         {
             "name": "Alex Morgan",
             "email": "alex@ngo.test",
             "password": "password123",
             "ngo_name": "CareConnect NGO",
-            "role": "Senior Caregiver"
+            "role": "Caregiver",
+            "phone": "+919309896256"
         },
         {
             "name": "Sarah Connor",
             "email": "sarah@ngo.test",
             "password": "password123",
             "ngo_name": "Sunrise NGO",
-            "role": "Coordinator"
+            "role": "Caregiver",
+            "phone": "+919309896256"
         }
     ]
 
@@ -41,6 +75,7 @@ def seed_caretakers():
             password_hash=generate_password_hash(c["password"]),
             ngo_name=c["ngo_name"],
             role=c["role"],
+            phone=c.get("phone"),
             created_at=datetime.now(timezone.utc)
         )
         db.session.add(caretaker)
@@ -163,14 +198,39 @@ def seed_events():
     db.session.commit()
 
 
+def seed_parents():
+    # Use existing PWID ID 1 (Aarav Sharma)
+    parent_data = {
+        "name": "Sumit Sharma",
+        "email": "sumit@example.com",
+        "phone": "+919309896256", # Placeholder, user can update in DB
+        "password": "password123",
+        "pwid_id": 1 
+    }
+    
+    exists = Parent.query.filter_by(email=parent_data["email"]).first()
+    if not exists:
+        p = Parent(
+            name=parent_data["name"],
+            email=parent_data["email"],
+            phone=parent_data["phone"],
+            password_hash=generate_password_hash(parent_data["password"]),
+            pwid_id=parent_data["pwid_id"],
+            created_at=datetime.now(timezone.utc)
+        )
+        db.session.add(p)
+    db.session.commit()
+
 if __name__ == "__main__":
     with app.app_context():
         print("🌱 Refreshing database schema...")
         db.drop_all()
         db.create_all()
         print("🌱 Seeding database...")
+        seed_ngos()
         seed_caretakers()
         seed_pwid()
         seed_tasks()
         seed_events()
+        seed_parents()
         print("✅ Seeding complete.")

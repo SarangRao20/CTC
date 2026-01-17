@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Dialog,
     DialogContent,
@@ -36,6 +37,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     patientId,
     patientName,
 }) => {
+    const { t } = useTranslation();
     const { toast } = useToast();
     const { refreshData } = useApp();
     const [submitting, setSubmitting] = useState(false);
@@ -52,8 +54,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
         if (!formData.title.trim()) {
             toast({
-                title: 'Validation Error',
-                description: 'Please enter a task title',
+                title: t('error'),
+                description: t('enter_title'),
                 variant: 'destructive',
             });
             return;
@@ -72,8 +74,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             });
 
             toast({
-                title: 'Task Created',
-                description: `Task added for ${patientName}`,
+                title: t('success'),
+                description: `${t('task_created')} ${patientName}`,
             });
 
             // Reset form
@@ -89,8 +91,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             onClose();
         } catch (error) {
             toast({
-                title: 'Error',
-                description: 'Failed to create task',
+                title: t('error'),
+                description: t('failed_create_task'),
                 variant: 'destructive',
             });
         } finally {
@@ -102,18 +104,18 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Add Task for {patientName}</DialogTitle>
+                    <DialogTitle>{t('add_task')} - {patientName}</DialogTitle>
                     <DialogDescription>
-                        Create a routine task or care activity
+                        {t('add_task_desc')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="title">Task Title *</Label>
+                        <Label htmlFor="title">{t('task_title')} *</Label>
                         <Input
                             id="title"
-                            placeholder="e.g., Morning medication"
+                            placeholder={t('task_placeholder')}
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             required
@@ -121,10 +123,10 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">{t('description')}</Label>
                         <Textarea
                             id="description"
-                            placeholder="Additional details..."
+                            placeholder={t('desc_placeholder')}
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             className="min-h-[80px]"
@@ -133,7 +135,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="category">Category</Label>
+                            <Label htmlFor="category">{t('category')}</Label>
                             <Select
                                 value={formData.category}
                                 onValueChange={(value) => setFormData({ ...formData, category: value })}
@@ -142,18 +144,18 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="medication">Medication</SelectItem>
-                                    <SelectItem value="therapy">Therapy</SelectItem>
-                                    <SelectItem value="hygiene">Hygiene</SelectItem>
-                                    <SelectItem value="meals">Meals</SelectItem>
-                                    <SelectItem value="activity">Activity</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
+                                    <SelectItem value="medication">{t('medication')}</SelectItem>
+                                    <SelectItem value="therapy">{t('therapy')}</SelectItem>
+                                    <SelectItem value="hygiene">{t('hygiene')}</SelectItem>
+                                    <SelectItem value="meals">{t('meals')}</SelectItem>
+                                    <SelectItem value="activity">{t('activity')}</SelectItem>
+                                    <SelectItem value="other">{t('other')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="priority">Priority</Label>
+                            <Label htmlFor="priority">{t('priority')}</Label>
                             <Select
                                 value={formData.priority}
                                 onValueChange={(value) => setFormData({ ...formData, priority: value })}
@@ -162,16 +164,16 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="low">Low</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="high">High</SelectItem>
+                                    <SelectItem value="low">{t('low')}</SelectItem>
+                                    <SelectItem value="medium">{t('medium')}</SelectItem>
+                                    <SelectItem value="high">{t('high')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="dueTime">Due Time (Optional)</Label>
+                        <Label htmlFor="dueTime">{t('due_time')}</Label>
                         <Input
                             id="dueTime"
                             type="time"
@@ -182,16 +184,16 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
                     <div className="flex justify-end gap-3 pt-4">
                         <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
-                            Cancel
+                            {t('cancel')}
                         </Button>
                         <Button type="submit" disabled={submitting}>
                             {submitting ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Creating...
+                                    {t('creating')}
                                 </>
                             ) : (
-                                'Create Task'
+                                t('create_task')
                             )}
                         </Button>
                     </div>

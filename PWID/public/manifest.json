@@ -1,0 +1,27 @@
+{
+    "name": "CareConnect - PWID Care Management",
+    "short_name": "CareConnect",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#9b87f5",
+    "description": "Comprehensive care management platform for Persons With Intellectual Disabilities (PWID).",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "64x64 32x32 24x24 16x16",
+            "type": "image/x-icon"
+        },
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        }
+    ],
+    "orientation": "portrait-primary"
+}

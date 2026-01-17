@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,13 +21,14 @@ import { Task } from '@/data/mockData';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const RoutineChecksPage = () => {
+  const { t } = useTranslation();
   const { tasks, patients, completeTask, deleteTask, caregiver } = useApp();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const patientIdFilter = searchParams.get('patientId');
 
   const getPatientName = (patientId: string) => {
-    return patients.find(p => p.id === patientId)?.name || 'Unknown Patient';
+    return patients.find(p => p.id === patientId)?.name || t('unknown_patient');
   };
 
   const getCategoryIcon = (category: Task['category']) => {
@@ -93,8 +95,8 @@ const RoutineChecksPage = () => {
                         'pending'
               }
             >
-              {task.status === 'overdue' ? 'Overdue' :
-                task.status === 'completed' ? 'Done' :
+              {task.status === 'overdue' ? t('overdue') :
+                task.status === 'completed' ? t('done') :
                   task.dueTime}
             </Badge>
           </div>
@@ -107,7 +109,7 @@ const RoutineChecksPage = () => {
             size="icon"
             onClick={() => completeTask(task.id)}
             className="h-8 w-8 text-muted-foreground hover:text-success hover:bg-success-light/20 rounded-full"
-            title="Mark Complete"
+            title={t('mark_complete')}
           >
             <CheckCircle2 className="w-5 h-5" />
           </Button>
@@ -116,12 +118,12 @@ const RoutineChecksPage = () => {
           variant="ghost"
           size="icon"
           onClick={() => {
-            if (confirm('Are you sure you want to delete this task?')) {
+            if (confirm(t('confirm_delete_task'))) {
               deleteTask(task.id);
             }
           }}
           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
-          title="Delete Task"
+          title={t('delete_task')}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -135,23 +137,23 @@ const RoutineChecksPage = () => {
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {patientIdFilter ? `Tasks for ${getPatientName(patientIdFilter)}` : 'Routine Checks'}
+              {patientIdFilter ? `${t('tasks_for')} ${getPatientName(patientIdFilter)}` : t('routine_checks')}
             </h1>
             <p className="text-muted-foreground">
-              {patientIdFilter ? 'Specific resident tasks' : `Tasks for ${caregiver?.ngo_name || 'your residents'}`}
+              {patientIdFilter ? t('specific_resident_tasks') : `${t('tasks_for')} ${caregiver?.ngo_name || t('your_residents')}`}
             </p>
           </div>
           <div className="flex gap-2 items-center">
             {patientIdFilter && (
               <Button variant="ghost" size="sm" onClick={() => setSearchParams({})} className="mr-2">
-                Clear Filter
+                {t('clear_filter')}
               </Button>
             )}
             <div className="px-3 py-1 bg-urgent-light/20 text-urgent rounded-lg text-sm font-medium border border-urgent/20">
-              {tasks.filter(t => t.status === 'overdue').length} Overdue
+              {tasks.filter(t => t.status === 'overdue').length} {t('overdue')}
             </div>
             <div className="px-3 py-1 bg-secondary text-foreground rounded-lg text-sm font-medium border border-border">
-              {tasks.filter(t => t.status === 'pending').length} Pending
+              {tasks.filter(t => t.status === 'pending').length} {t('pending')}
             </div>
           </div>
         </div>
@@ -172,11 +174,11 @@ const RoutineChecksPage = () => {
                     </div>
                     <div>
                       <h2 className="font-bold text-foreground">{patient.name}</h2>
-                      <p className="text-xs text-muted-foreground">Room {patient.roomNumber}</p>
+                      <p className="text-xs text-muted-foreground">{t('room')} {patient.roomNumber}</p>
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate(`/dashboard`)}>
-                    View Card <ChevronRight className="w-3 h-3 ml-1" />
+                    {t('view_card')} <ChevronRight className="w-3 h-3 ml-1" />
                   </Button>
                 </div>
 
@@ -184,20 +186,20 @@ const RoutineChecksPage = () => {
                 <div className="p-4">
                   {pending.length > 0 && (
                     <div className="mb-4">
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">To Do ({pending.length})</h3>
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('to_do')} ({pending.length})</h3>
                       {pending.map(t => <TaskCard key={t.id} task={t} />)}
                     </div>
                   )}
 
                   {completed.length > 0 && (
                     <div className={`${pending.length > 0 ? 'pt-4 border-t border-border' : ''}`}>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 opacity-70">Completed</h3>
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 opacity-70">{t('completed')}</h3>
                       {completed.map(t => <TaskCard key={t.id} task={t} />)}
                     </div>
                   )}
 
                   {pTasks.length === 0 && (
-                    <p className="text-center text-sm text-muted-foreground py-4">No tasks assigned.</p>
+                    <p className="text-center text-sm text-muted-foreground py-4">{t('no_tasks_assigned')}</p>
                   )}
                 </div>
               </div>
@@ -207,7 +209,7 @@ const RoutineChecksPage = () => {
           {patientTasks.length === 0 && (
             <div className="col-span-full text-center py-16">
               <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-30" />
-              <p className="text-muted-foreground">No active routine checks found.</p>
+              <p className="text-muted-foreground">{t('no_active_routine_checks')}</p>
             </div>
           )}
         </div>

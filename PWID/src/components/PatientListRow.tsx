@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Patient } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,8 @@ const PatientListRow: React.FC<PatientListRowProps> = ({
   onSelect,
   onViewProgress,
 }) => {
+  const { t } = useTranslation();
+
   const statusVariant = {
     stable: 'stable',
     'needs-attention': 'needs-attention',
@@ -25,16 +28,16 @@ const PatientListRow: React.FC<PatientListRowProps> = ({
   } as const;
 
   const statusLabel = {
-    stable: 'Stable',
-    'needs-attention': 'Needs Attention',
-    urgent: 'Urgent',
+    stable: t('stable'),
+    'needs-attention': t('needs_attention'),
+    urgent: t('urgent'),
   };
 
   const supportLevelLabel = {
-    minimal: 'Minimal',
-    moderate: 'Moderate',
-    substantial: 'Substantial',
-    extensive: 'Extensive',
+    minimal: t('minimal'),
+    moderate: t('moderate'),
+    substantial: t('substantial'),
+    extensive: t('extensive'),
   };
 
   const supportLevelColor = {
@@ -53,32 +56,32 @@ const PatientListRow: React.FC<PatientListRowProps> = ({
       onKeyDown={(e) => e.key === 'Enter' && onSelect()}
       role="button"
       tabIndex={0}
-      aria-label={`Select ${patient.name}, status: ${statusLabel[patient.status]}`}
+      aria-label={`${t('select')} ${patient.name}, ${t('status')}: ${statusLabel[patient.status]}`}
       aria-pressed={isSelected}
     >
       {/* Avatar */}
-      <div 
+      <div
         className={`
           w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0
-          ${patient.status === 'urgent' 
-            ? 'bg-urgent-light' 
-            : patient.status === 'needs-attention' 
-              ? 'bg-warning-light' 
+          ${patient.status === 'urgent'
+            ? 'bg-urgent-light'
+            : patient.status === 'needs-attention'
+              ? 'bg-warning-light'
               : 'bg-primary-light'
           }
         `}
         aria-hidden="true"
       >
-        <User 
+        <User
           className={`
             w-6 h-6
-            ${patient.status === 'urgent' 
-              ? 'text-urgent' 
-              : patient.status === 'needs-attention' 
-                ? 'text-warning' 
+            ${patient.status === 'urgent'
+              ? 'text-urgent'
+              : patient.status === 'needs-attention'
+                ? 'text-warning'
                 : 'text-primary'
             }
-          `} 
+          `}
         />
       </div>
 
@@ -91,9 +94,9 @@ const PatientListRow: React.FC<PatientListRowProps> = ({
           </Badge>
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground mb-1">
-          <span>Age {patient.age}</span>
+          <span>{t('age')} {patient.age}</span>
           <span>•</span>
-          <span>Room {patient.roomNumber}</span>
+          <span>{t('room')} {patient.roomNumber}</span>
           <span className="hidden sm:inline">•</span>
           <span className="hidden sm:flex items-center gap-1">
             <Clock className="w-3 h-3" />
@@ -103,7 +106,7 @@ const PatientListRow: React.FC<PatientListRowProps> = ({
         <div className="flex items-center gap-1.5 text-xs">
           <HandHelping className={`w-3.5 h-3.5 ${supportLevelColor[patient.functionalSupport]}`} />
           <span className={`font-medium ${supportLevelColor[patient.functionalSupport]}`}>
-            {supportLevelLabel[patient.functionalSupport]} Support
+            {supportLevelLabel[patient.functionalSupport]} {t('support')}
           </span>
         </div>
       </div>
@@ -117,10 +120,10 @@ const PatientListRow: React.FC<PatientListRowProps> = ({
           onViewProgress();
         }}
         className="flex-shrink-0 gap-2"
-        aria-label={`View progress for ${patient.name}`}
+        aria-label={`${t('view_progress_for')} ${patient.name}`}
       >
         <TrendingUp className="w-4 h-4" />
-        <span className="hidden sm:inline">Progress</span>
+        <span className="hidden sm:inline">{t('progress')}</span>
       </Button>
     </article>
   );

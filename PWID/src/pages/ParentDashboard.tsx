@@ -113,9 +113,9 @@ const ParentDashboard: React.FC = () => {
                     {/* Left Column: Stats & Status */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Alerts Notification Section */}
-                        {([...recentLogs].filter(l => l.incident === 'yes').length > 0 || riskData?.level === 'High') && (
+                        {([...recentLogs].filter(l => l.incident && !['no', 'none', 'unknown', 'stable'].includes(l.incident.toLowerCase())).length > 0 || riskData?.level === 'High') && (
                             <div className="space-y-4" id="crisis-alerts">
-                                {[...recentLogs].filter(l => l.incident === 'yes').slice(0, 2).map(log => (
+                                {[...recentLogs].filter(l => l.incident && !['no', 'none', 'unknown', 'stable'].includes(l.incident.toLowerCase())).slice(0, 2).map(log => (
                                     <div key={`alert-${log.id}`} className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-4 animate-pulse">
                                         <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
                                             <AlertTriangle className="w-6 h-6 text-red-600" />
@@ -193,7 +193,7 @@ const ParentDashboard: React.FC = () => {
                                             {recentLogs.map((log) => (
                                                 <div key={log.id} className="p-4 hover:bg-slate-50 transition-colors flex gap-4">
                                                     <div className="flex-shrink-0 mt-1">
-                                                        <div className={`w-2 h-2 rounded-full ${log.incident === 'yes' ? 'bg-red-500' : 'bg-green-500'}`} />
+                                                        <div className={`w-2 h-2 rounded-full ${log.incident && !['no', 'none', 'unknown', 'stable'].includes(log.incident.toLowerCase()) ? 'bg-red-500' : 'bg-green-500'}`} />
                                                     </div>
                                                     <div className="flex-1 space-y-2">
                                                         <div className="flex justify-between items-center">

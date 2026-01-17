@@ -289,7 +289,10 @@ def trigger_alerts(log):
         # 1. Analyze Risk Level immediately
         risk_result = calculate_single_risk(log)
         is_high_risk = risk_result.get("level") == "High"
-        has_incident = log.incident and log.incident.lower() not in ['no', 'none', 'unknown']
+        
+        # Incident detection logic: Any incident that isn't 'None', 'no', or 'Unknown'
+        incident_val = (log.incident or "None").strip().lower()
+        has_incident = incident_val not in ['no', 'none', 'unknown', 'stable']
 
         # --- PARENT ALERTS (Incidents + High Risk) ---
         if has_incident or is_high_risk:
@@ -303,24 +306,45 @@ def trigger_alerts(log):
 
             if target_number:
                 if has_incident:
-                    reason = f"Incident Reported: {log.incident}"
+                    reason = f"⚠️ INCIDENT REPORTED: {log.incident}"
                 else:
-                    reason = f"High Risk Detected: {risk_result.get('reason')}"
+                    reason = f"📈 HIGH RISK DETECTED: {risk_result.get('reason')}"
                 
-                msg = f"🚨 CareConnect Alert for {pwid.full_name}:\n{reason}.\nMood: {log.mood}, Sleep: {log.sleep_quality}."
+                # Contextual details
+                details = []
+                if log.mood and log.mood != "Unknown": details.append(f"• Mood: {log.mood}")
+                if log.sleep_quality and log.sleep_quality != "Unknown": details.append(f"• Sleep: {log.sleep_quality}")
+                if log.meals and log.meals != "Unknown": details.append(f"• Meals: {log.meals}")
+                
+                details_msg = "\n".join(details) if details else "• Routine logs analyzed."
+                
+                msg = (
+                    f"🚨 *CareConnect Alert for {pwid.full_name}*\n\n"
+                    f"{reason}\n\n"
+                    f"*Recent Observations:*\n{details_msg}\n\n"
+                    f"Notes: {log.notes or 'No specific notes recorded.'}\n"
+                    f"View full dashboard: https://careconnect.app/parent/{log.pwid_id}"
+                )
                 
                 send_whatsapp_alert(target_number, msg)
                 print(f"Sent Parent Alert to {target_number}")
 
         # --- CAREGIVER ALERTS (Medicine) ---
-        if log.medication_given and log.medication_given.lower() in ['no', 'skipped']:
+        med_val = (log.medication_given or "Unknown").strip().lower()
+        if med_val in ['no', 'skipped', 'refused']:
             caretaker = Caretaker.query.filter(
                 Caretaker.ngo_name == pwid.ngo_name, 
                 Caretaker.phone != None
             ).first()
 
             if caretaker and caretaker.phone:
-                med_msg = f"💊 Medication Missed Alert:\nPatient: {pwid.full_name}\nStatus: {log.medication_given}\nNotes: {log.notes}\nPlease follow up immediately."
+                med_msg = (
+                    f"💊 *URGENT: Medication Missed*\n\n"
+                    f"Patient: {pwid.full_name}\n"
+                    f"Status: {log.medication_given}\n"
+                    f"Notes: {log.notes}\n\n"
+                    f"Please follow up with the resident immediately."
+                )
                 send_whatsapp_alert(caretaker.phone, med_msg)
                 print(f"Sent Caregiver Alert (Meds) to {caretaker.phone}")
 
@@ -641,7 +665,7 @@ def dashboard_summary():
 
     logs_today = Routinelog.query.filter(Routinelog.created_at >= today_start).all()
     incidents_today = [
-        log for log in logs_today if log.incident == "yes"
+        log for log in logs_today if log.incident and log.incident.lower() in ["yes", "concerning", "minor"]
     ]
 
     risk_summary = {
@@ -827,43 +851,59 @@ def observe_input():
     if not text or not pwid_id:
         return jsonify({"error": "Missing text or pwid_id"}), 400
 
-    # 1️⃣ AI extraction
-    observation = process_observation(text)
+    print(f"Observing input for PWID {pwid_id}: {text[:50]}...")
+    
+    try:
+        # 1️⃣ AI extraction
+        observation = process_observation(text)
+        print(f"AI Observation Extracted: {observation}")
 
-    # 2️⃣ Risk scoring (single day)
-    risk = calculate_single_risk({
-        "mood": observation.get("mood", "Unknown"),
-        "sleep": observation.get("sleep", "Unknown"),
-        "meals": observation.get("meals", "Unknown"),
-        "incident": observation.get("incident", "Unknown")
-    })
+        # 2️⃣ Risk scoring (single day)
+        risk = calculate_single_risk({
+            "mood": observation.get("mood", "Unknown"),
+            "sleep": observation.get("sleep", "Unknown"),
+            "meals": observation.get("meals", "Unknown"),
+            "incident": observation.get("incident", "Unknown")
+        })
+        print(f"Risk Calculated: {risk['level']} (Score: {risk['score']})")
 
-    # 3️⃣ Save as routine log
-    log = Routinelog(
-        pwid_id=pwid_id,
-        sleep_quality=observation.get("sleep", "Unknown"),
-        meals=observation.get("meals", "Unknown"),
-        medication_given=observation.get("medication", "Unknown"), # Now dynamic
-        mood=observation.get("mood", "Unknown"),
-        activity_done=observation.get("activity", "Unknown"), # Now dynamic
-        incident=observation.get("incident", "Unknown"),
-        notes=observation.get("notes", text),
-        created_at=datetime.utcnow(),
-        created_by=caregiver_id
-    )
+        # 3️⃣ Save as routine log
+        log = Routinelog(
+            pwid_id=pwid_id,
+            sleep_quality=observation.get("sleep", "Unknown"),
+            meals=observation.get("meals", "Unknown"),
+            medication_given=observation.get("medication", "Unknown"),
+            mood=observation.get("mood", "Unknown"),
+            activity_done=observation.get("activity", "Unknown"),
+            incident=observation.get("incident", "Unknown"),
+            notes=observation.get("notes", text),
+            created_at=datetime.utcnow(),
+            created_by=caregiver_id
+        )
 
-    db.session.add(log)
-    db.session.commit()
+        db.session.add(log)
+        db.session.commit()
+        print(f"Log saved successfully with ID: {log.id}")
 
-    # --- Trigger Alerts ---
-    trigger_alerts(log)
-    # ----------------------
+        # --- Trigger Alerts ---
+        try:
+            trigger_alerts(log)
+        except Exception as alert_err:
+            print(f"Non-fatal alert error: {alert_err}")
+        # ----------------------
 
-    return jsonify({
-        "structured_observation": observation,
-        "risk": risk,
-        "log_id": log.id
-    }), 201
+        return jsonify({
+            "structured_observation": observation,
+            "risk": risk,
+            "log_id": log.id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"CRITICAL ERROR in observe_input: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Internal processor error", "details": str(e)}), 500
 
 @routes_bp.route("/api/voice/transcribe", methods=["POST"])
 def voice_transcribe():

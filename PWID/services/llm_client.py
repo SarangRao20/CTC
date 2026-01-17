@@ -4,9 +4,10 @@ import json
 import re
 import logging
 
-# Optional LLM Enhancement (HuggingFace)
-HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
-HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+# Optional LLM Enhancement (Groq)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+MODEL_NAME = "llama-3.1-7b-instant" 
 
 # Rule-based extraction patterns
 MOOD_PATTERNS = {
@@ -123,32 +124,52 @@ def extract_with_rules(text: str):
 
 
 def call_llm_optional(text: str):
-    """Optional LLM enhancement using HuggingFace (if token available)"""
-    if not HUGGINGFACE_TOKEN:
+    """Optional LLM enhancement using Groq (if key available)"""
+    if not GROQ_API_KEY:
         return None
     
     headers = {
-        "Authorization": f"Bearer {HUGGINGFACE_TOKEN}",
+        "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
     }
     
-    prompt = f"""Extract structured data from this caregiver observation. Return ONLY valid JSON.
+    prompt = f"""You are a medical data extractor. Extract structured data from this caregiver observation. 
+Return ONLY valid JSON. Do not include any greeting or explanation.
+
 Observation: "{text}"
-Extract: mood (Calm/Happy/Anxious/Irritable/Aggressive/Unknown), sleep (Good/Disturbed/Poor/Unknown), meals (Normal/Reduced/Skipped/Unknown), incident (None/Minor/Concerning/Unknown).
-JSON:"""
-    
+
+Fields to extract:
+- mood: choose from [Calm, Happy, Anxious, Irritable, Aggressive, Unknown]
+- sleep: choose from [Good, Disturbed, Poor, Unknown]
+- meals: choose from [Normal, Reduced, Skipped, Unknown]
+- incident: choose from [None, Minor, Concerning, Unknown]
+- medication: choose from [yes, no, Unknown]
+- activity: choose from [yes, no, Unknown]
+
+JSON format:
+{{
+  "mood": "...",
+  "sleep": "...",
+  "meals": "...",
+  "incident": "...",
+  "medication": "...",
+  "activity": "...",
+  "notes": "Original text summarized if needed",
+  "confidence": "High/Medium/Low"
+}}"""
+
     payload = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": 150,
-            "temperature": 0.2,
-            "return_full_text": False
-        }
+        "model": "llama-3.1-8b-instant",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.1,
+        "response_format": {"type": "json_object"}
     }
     
     try:
         response = requests.post(
-            HUGGINGFACE_API_URL,
+            GROQ_API_URL,
             headers=headers,
             json=payload,
             timeout=10
@@ -156,16 +177,13 @@ JSON:"""
         response.raise_for_status()
         
         result = response.json()
-        if isinstance(result, list) and len(result) > 0:
-            generated_text = result[0].get('generated_text', '')
-            # Try to parse JSON from the response
-            json_match = re.search(r'\{[^}]+\}', generated_text)
-            if json_match:
-                parsed = json.loads(json_match.group())
-                parsed['source'] = 'llm'
-                return parsed
+        if 'choices' in result and len(result['choices']) > 0:
+            content = result['choices'][0]['message']['content']
+            parsed = json.loads(content)
+            parsed['source'] = 'groq'
+            return parsed
     except Exception as e:
-        logging.warning(f"LLM enhancement failed: {e}")
+        logging.warning(f"Groq LLM enhancement failed: {e}")
     
     return None
 

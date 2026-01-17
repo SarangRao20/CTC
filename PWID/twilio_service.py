@@ -24,7 +24,7 @@ def send_whatsapp_alert(to_number, message):
     }
 
     try:
-        response = requests.post(url, data=data, auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN))
+        response = requests.post(url, data=data, auth=(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN), timeout=10)
         return response.json()
     except Exception as e:
         print(f"Failed to send Twilio message: {e}")

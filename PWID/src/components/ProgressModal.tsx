@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Patient, HistoryEvent } from '@/data/mockData';
 import { useApp } from '@/context/AppContext';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,7 @@ interface ProgressModalProps {
 }
 
 const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose }) => {
+  const { t } = useTranslation();
   const { getPatientEvents } = useApp();
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -97,11 +99,11 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
             </div>
             <div>
               <h2 id="modal-title" className="text-xl font-bold text-foreground">
-                {patient.name} - Progress
+                {patient.name} - {t('progress')}
               </h2>
               <p className="text-muted-foreground flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Last 30 days
+                {t('last_30d')}
               </p>
             </div>
           </div>
@@ -129,7 +131,7 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
                   ? Math.round(events.filter(e => e.type === 'vitals' && e.vitals?.heartRate).reduce((acc, curr) => acc + (curr.vitals?.heartRate || 0), 0) / events.filter(e => e.type === 'vitals' && e.vitals?.heartRate).length)
                   : '--'}
               </p>
-              <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
+              <p className="text-sm text-muted-foreground">{t('avg_hr')}</p>
             </div>
             <div className="p-4 bg-secondary/50 rounded-xl text-center">
               <div className="w-10 h-10 rounded-lg bg-info-light mx-auto mb-2 flex items-center justify-center">
@@ -140,7 +142,7 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
                   ? (events.filter(e => e.type === 'vitals' && e.vitals?.temperature).reduce((acc, curr) => acc + (curr.vitals?.temperature || 0), 0) / events.filter(e => e.type === 'vitals' && e.vitals?.temperature).length).toFixed(1)
                   : '--'}°
               </p>
-              <p className="text-sm text-muted-foreground">Avg Temp</p>
+              <p className="text-sm text-muted-foreground">{t('avg_temp')}</p>
             </div>
             <div className="p-4 bg-secondary/50 rounded-xl text-center">
               <div className="w-10 h-10 rounded-lg bg-primary-light mx-auto mb-2 flex items-center justify-center">
@@ -151,25 +153,25 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
                   ? events.filter(e => e.type === 'vitals' && e.vitals?.bloodPressure)[0].vitals?.bloodPressure
                   : '--'}
               </p>
-              <p className="text-sm text-muted-foreground">Latest BP</p>
+              <p className="text-sm text-muted-foreground">{t('latest_bp')}</p>
             </div>
             <div className="p-4 bg-secondary/50 rounded-xl text-center">
               <div className="w-10 h-10 rounded-lg bg-accent-light mx-auto mb-2 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-accent-foreground" />
               </div>
               <p className="text-2xl font-bold text-foreground">{events.length}</p>
-              <p className="text-sm text-muted-foreground">Total Events</p>
+              <p className="text-sm text-muted-foreground">{t('total_events')}</p>
             </div>
           </div>
 
           {/* Timeline */}
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-            Event Timeline
+            {t('event_timeline')}
           </h3>
           <div className="space-y-4">
             {events.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                No events recorded for this patient.
+                {t('no_history')}
               </p>
             ) : (
               events.map((event, index) => (
@@ -210,7 +212,7 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
                       <div className="p-3 bg-success-light/30 rounded-lg text-sm">
                         <div className="flex flex-wrap gap-4">
                           {event.vitals.temperature && (
-                            <span>Temp: {event.vitals.temperature}°F</span>
+                            <span>{t('temp')}: {event.vitals.temperature}°F</span>
                           )}
                           {event.vitals.heartRate && (
                             <span>HR: {event.vitals.heartRate} bpm</span>
@@ -244,11 +246,11 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ patient, isOpen, onClose 
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t border-border bg-secondary/30">
           <Button variant="outline" onClick={onClose}>
-            Close
+            {t('close')}
           </Button>
           <Button variant="default" className="gap-2" onClick={() => window.open(`/report/${patient.id}`, '_blank')}>
             <Download className="w-4 h-4" />
-            Export Report
+            {t('export_report')}
           </Button>
         </div>
       </div>

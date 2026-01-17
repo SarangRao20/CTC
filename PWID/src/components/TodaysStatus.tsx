@@ -34,7 +34,7 @@ const TodaysStatus: React.FC<TodaysStatusProps> = ({ logs, patientName }) => {
             logDate.getFullYear() === today.getFullYear();
     });
 
-    const latestLog = todayLogs.length > 0 ? todayLogs[todayLogs.length - 1] : null;
+    const latestLog = todayLogs.length > 0 ? todayLogs[0] : null;
 
     // Helper to determine status color and icon
     const getStatus = (type: 'mood' | 'sleep' | 'meals', value: string) => {

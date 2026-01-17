@@ -94,18 +94,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const fetchStats = async () => {
     try {
       const ngoParam = state.caregiver?.ngo_name ? `?ngo=${encodeURIComponent(state.caregiver.ngo_name)}` : '';
-      const response = await api.get(`/dashboard/summary${ngoParam}`);
-      // Note: Backend route was /dashboard/stats but the one I see in routes.py is /dashboard/summary or /dashboard/stats?
-      // Let's check routes.py again. Ah, it has BOTH. /dashboard/stats (API) and /dashboard/summary (API).
-      // Converting to use the summary endpoint which I just modified with NGO support? 
-      // logic in routes.py:
-      // @routes_bp.route('/dashboard/stats', methods=['GET']) -> get_dashboard_stats_api -> DOES NOT HAVE FILTER YET
-      // @routes_bp.route("/dashboard/summary" -> dashboard_summary -> HAS FILTER
-
-      // Let's stick to the one the text uses: /dashboard/stats. Wait, looking at routes.py again..
-      // I modified dashboard_summary (line 439) in previous step.
-      // I should update get_dashboard_stats_api (line 380) too.
-      // For now, I'll point to /dashboard/stats and will fix that endpoint in next step.
+      const response = await api.get(`/dashboard/stats${ngoParam}`);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch stats:', error);

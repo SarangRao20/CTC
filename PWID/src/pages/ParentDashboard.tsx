@@ -10,6 +10,7 @@ import {
     Loader2, MapPin, Clock, CheckCircle, AlertTriangle,
     Activity, Moon, Utensils, Smile, Calendar, Phone
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import ParentUserGuide from '@/components/ParentUserGuide';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
@@ -111,6 +112,39 @@ const ParentDashboard: React.FC = () => {
                 <div className="grid lg:grid-cols-3 gap-6">
                     {/* Left Column: Stats & Status */}
                     <div className="lg:col-span-2 space-y-6">
+                        {/* Alerts Notification Section */}
+                        {([...recentLogs].filter(l => l.incident === 'yes').length > 0 || riskData?.level === 'High') && (
+                            <div className="space-y-4" id="crisis-alerts">
+                                {[...recentLogs].filter(l => l.incident === 'yes').slice(0, 2).map(log => (
+                                    <div key={`alert-${log.id}`} className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-start gap-4 animate-pulse">
+                                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                            <AlertTriangle className="w-6 h-6 text-red-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between">
+                                                <h3 className="text-red-900 font-bold text-sm">CRITICAL INCIDENT REPORTED</h3>
+                                                <span className="text-[10px] text-red-500 font-medium">
+                                                    {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                                                </span>
+                                            </div>
+                                            <p className="text-red-700 text-sm mt-1">{log.notes || "An incident was reported by the caregiver. Please check the logs."}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {riskData?.level === 'High' && (
+                                    <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                            <Activity className="w-6 h-6 text-amber-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="text-amber-900 font-bold text-sm">HIGH RISK OBSERVATION</h3>
+                                            <p className="text-amber-700 text-sm mt-1">{riskData.reason}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* Child Profile Card */}
                         <Card className="border-slate-100 shadow-sm overflow-hidden" id="child-profile">
                             <div className="h-2 bg-gradient-to-r from-blue-400 to-purple-400" />

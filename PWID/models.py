@@ -77,7 +77,7 @@ class Task(db.Model):
     description = db.Column(db.Text)
     category = db.Column(db.String(50), nullable=False) # medication, meal, hygiene, therapy, checkup, other
     priority = db.Column(db.String(50), nullable=False) # urgent, high, normal
-    due_time = db.Column(db.String(50), nullable=False) # "10:00 AM"
+    due_time = db.Column(db.String(50), nullable=True) # "10:00 AM"
     status = db.Column(db.String(50), default='pending') # pending, overdue, completed
     completed_at = db.Column(db.DateTime)
     completed_by = db.Column(db.String(100)) # Name of the person who completed it

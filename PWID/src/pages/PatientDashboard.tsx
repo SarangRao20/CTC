@@ -265,28 +265,34 @@ const PatientDashboard = () => {
     const [informed, setInformed] = useState<Record<string, boolean>>({});
     const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
 
+    const [logs, setLogs] = useState<any[]>([]);
+    const [risk, setRisk] = useState<any>(null);
+
+    const fetchData = async () => {
+        try {
+            const [patientRes, logsRes, riskRes] = await Promise.all([
+                api.get(`/pwids/${id}`),
+                api.get(`/logs/${id}`),
+                api.get(`/risk/${id}`)
+            ]);
+            setPatient(patientRes.data);
+            setLogs(logsRes.data.reverse()); // Newest first
+            setRisk(riskRes.data);
+        } catch (error) {
+            console.error("Failed to fetch dashboard data", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const patientRes = await api.get(`/pwids/${id}`);
-                setPatient(patientRes.data);
-            } catch (error) {
-                console.error("Failed to fetch patient data", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+        if (id) fetchData();
     }, [id]);
 
     if (loading) return <div className="p-8"><Skeleton className="h-12 w-1/3" /></div>;
     if (!patient) return <div className="p-8">Patient not found</div>;
 
-    // --- Data for Status Tab (Mock or derived) ---
-    // (In a real app, this would come from API)
-    const logs: any[] = []; // Placeholder for now or fetch logs
-    const risk = { risk_level: 'Low' }; // Placeholder
-    const incidentCount = 0;
+    const incidentCount = logs.filter(l => l.incident && l.incident.toLowerCase() !== 'no' && l.incident.toLowerCase() !== 'none').length;
 
     // Helper for Age
     const getAge = (dob: string) => {

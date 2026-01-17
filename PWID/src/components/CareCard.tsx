@@ -22,7 +22,7 @@ interface CareCardProps {
 const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
     const navigate = useNavigate();
     const { toast } = useToast();
-    const { addEvent, getPatientEvents } = useApp();
+    const { addEvent, getPatientEvents, refreshData } = useApp();
     const [logText, setLogText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [observationResult, setObservationResult] = useState(null);
@@ -44,21 +44,37 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
         : "No logs yet";
 
 
-    const handleVoiceTranscription = (text: string) => {
-        // Simple heuristic: If text starts with "Task" or "Remind", treat as task
+    const handleVoiceTranscription = async (text: string) => {
         const lowerText = text.toLowerCase().trim();
+        // If text starts with "Task", "Remind", or "Add Task", create a task
         if (lowerText.startsWith("task") || lowerText.startsWith("remind") || lowerText.startsWith("add task")) {
-            // Mock Task Addition
-            toast({
-                title: "Voice Task Added",
-                description: `Task created: "${text}"`,
-                variant: "default"
-            });
-            // Clear log text in case it was partially set
-            setLogText("");
+            try {
+                const cleanTask = text.replace(/^(task|remind|add task)\s+/i, '');
+                const res = await api.post('/tasks', {
+                    pwid_id: patient.id,
+                    title: cleanTask,
+                    description: `Added via voice command: "${text}"`,
+                    category: 'other',
+                    priority: 'medium'
+                });
+                if (res.status === 201) {
+                    await refreshData();
+                    toast({
+                        title: "Voice Task Added",
+                        description: `Task created: "${cleanTask}"`,
+                        variant: "default"
+                    });
+                }
+            } catch (err) {
+                toast({ title: "Error", description: "Failed to create voice task.", variant: "destructive" });
+            }
         } else {
-            // Standard Observation Log
+            // Standard Observation Log - Append to the text box for user review
             setLogText(prev => prev ? `${prev} ${text}` : text);
+            toast({
+                title: "Voice Captured",
+                description: "Transcription added to notes. Review and send.",
+            });
         }
     };
 
@@ -74,6 +90,7 @@ const CareCard: React.FC<CareCardProps> = ({ patient, onViewProgress }) => {
 
             if (res.status === 201) {
                 setObservationResult(res.data);
+                await refreshData();
 
                 // Add to context immediately for history update
                 addEvent({

@@ -276,6 +276,85 @@ def get_caretaker(caretaker_id):
     }
     return jsonify(caretaker_data)
 
+def trigger_alerts(log):
+    """Triggers WhatsApp alerts for incidents, high risk, and skipped medications."""
+    try:
+        from twilio_service import send_whatsapp_alert
+        from risk_engine import calculate_single_risk
+        import os
+        
+        pwid = PWID.query.get(log.pwid_id)
+        if not pwid: return
+
+        # 1. Analyze Risk Level immediately
+        risk_result = calculate_single_risk(log)
+        is_high_risk = risk_result.get("level") == "High"
+        has_incident = log.incident and log.incident.lower() not in ['no', 'none', 'unknown']
+
+        # --- PARENT ALERTS (Incidents + High Risk) ---
+        if has_incident or is_high_risk:
+            parent = Parent.query.filter_by(pwid_id=log.pwid_id).first()
+            
+            target_number = None
+            if parent and parent.phone:
+                target_number = parent.phone
+            else:
+                target_number = os.getenv('ALERT_PHONE_NUMBER')
+
+            if target_number:
+                if has_incident:
+                    reason = f"Incident Reported: {log.incident}"
+                else:
+                    reason = f"High Risk Detected: {risk_result.get('reason')}"
+                
+                msg = f"🚨 CareConnect Alert for {pwid.full_name}:\n{reason}.\nMood: {log.mood}, Sleep: {log.sleep_quality}."
+                
+                send_whatsapp_alert(target_number, msg)
+                print(f"Sent Parent Alert to {target_number}")
+
+        # --- CAREGIVER ALERTS (Medicine) ---
+        if log.medication_given and log.medication_given.lower() in ['no', 'skipped']:
+            caretaker = Caretaker.query.filter(
+                Caretaker.ngo_name == pwid.ngo_name, 
+                Caretaker.phone != None
+            ).first()
+
+            if caretaker and caretaker.phone:
+                med_msg = f"💊 Medication Missed Alert:\nPatient: {pwid.full_name}\nStatus: {log.medication_given}\nNotes: {log.notes}\nPlease follow up immediately."
+                send_whatsapp_alert(caretaker.phone, med_msg)
+                print(f"Sent Caregiver Alert (Meds) to {caretaker.phone}")
+
+    except Exception as e:
+        print(f"Error processing alerts: {e}")
+
+    # --- Record Event for History ---
+    try:
+        from models import Event, Caretaker
+        
+        # Get caregiver info for the event
+        caregiver_name = "Caregiver"
+        if log.created_by:
+            cg = Caretaker.query.get(log.created_by)
+            if cg: caregiver_name = cg.name
+
+        new_event = Event(
+            pwid_id=log.pwid_id,
+            type='vitals' if any(x in (log.notes or '').lower() for x in ['temp', 'bp', 'heart']) else 'note',
+            title='Routine Log' if log.incident.lower() != 'yes' else 'Incident Reported',
+            description=log.notes or f"Mood: {log.mood}, Sleep: {log.sleep_quality}",
+            timestamp=log.created_at,
+            caregiver_id=str(log.created_by),
+            caregiver_name=caregiver_name
+        )
+        if log.incident.lower() == 'yes':
+             new_event.type = 'incident'
+             
+        db.session.add(new_event)
+        db.session.commit()
+        print(f"Recorded history event for {log.pwid_id}")
+    except Exception as e:
+        print(f"Error recording history event: {e}")
+
 @routes_bp.route('/log', methods=["POST"])
 @swag_from({
     "tags": ["Routine Logs"],
@@ -358,59 +437,9 @@ def create_log():
     db.session.add(log)
     db.session.commit()
 
-    # --- Twilio Alert Logic ---
-    try:
-        from twilio_service import send_whatsapp_alert
-        from risk_engine import calculate_single_risk
-        
-        pwid = PWID.query.get(log.pwid_id)
-        
-        # 1. Analyze Risk Level immediately
-        # We need to construct an observation dict or pass the log object if it's committed
-        # The risk engine expects dict or object. Since log is committed, we can pass it, 
-        # but calculate_single_risk logic for object access attributes like log.mood etc.
-        risk_result = calculate_single_risk(log)
-        is_high_risk = risk_result.get("level") == "High"
-        has_incident = log.incident and log.incident.lower() not in ['no', 'none']
-
-        # --- PARENT ALERTS (Incidents + High Risk) ---
-        if has_incident or is_high_risk:
-            parent = Parent.query.filter_by(pwid_id=log.pwid_id).first()
-            
-            target_number = None
-            if parent and parent.phone:
-                target_number = parent.phone
-            else:
-                target_number = os.getenv('ALERT_PHONE_NUMBER')
-
-            if target_number:
-                if has_incident:
-                    reason = f"Incident Reported: {log.incident}"
-                else:
-                    reason = f"High Risk Detected: {risk_result.get('reason')}"
-                
-                msg = f"🚨 CareConnect Alert for {pwid.full_name}:\n{reason}.\nMood: {log.mood}, Sleep: {log.sleep_quality}."
-                
-                resp = send_whatsapp_alert(target_number, msg)
-                print(f"Sent Parent Alert to {target_number}")
-
-        # --- CAREGIVER ALERTS (Medicine) ---
-        if log.medication_given and log.medication_given.lower() in ['no', 'skipped']:
-            # Find a caregiver to notify. Ideally the creator, or an admin/coordinator of the NGO.
-            # For simplicity, finding any caregiver with a phone number in the same NGO.
-            caretaker = Caretaker.query.filter(
-                Caretaker.ngo_name == pwid.ngo_name, 
-                Caretaker.phone != None
-            ).first()
-
-            if caretaker and caretaker.phone:
-                med_msg = f"💊 Medication Missed Alert:\nPatient: {pwid.full_name}\nStatus: {log.medication_given}\nNotes: {log.notes}\nPlease follow up immediately."
-                send_whatsapp_alert(caretaker.phone, med_msg)
-                print(f"Sent Caregiver Alert (Meds) to {caretaker.phone}")
-
-    except Exception as e:
-        print(f"Error processing alerts: {e}")
-    # --------------------------
+    # --- Trigger Alerts ---
+    trigger_alerts(log)
+    # ----------------------
 
     return jsonify({
         "message": "Log created successfully",
@@ -730,7 +759,7 @@ def create_task():
         description=data.get('description', ''),
         category=data.get('category', 'other'),
         priority=data.get('priority', 'medium'),
-        due_time=data.get('due_time'),
+        due_time=data.get('due_time') or datetime.now().strftime("%I:%M %p"),
         status='pending'
     )
     
@@ -825,6 +854,10 @@ def observe_input():
 
     db.session.add(log)
     db.session.commit()
+
+    # --- Trigger Alerts ---
+    trigger_alerts(log)
+    # ----------------------
 
     return jsonify({
         "structured_observation": observation,

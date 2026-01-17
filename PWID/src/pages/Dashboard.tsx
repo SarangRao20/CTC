@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import api from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 import CareCard from '@/components/CareCard';
 import ProgressModal from '@/components/ProgressModal';
 import DashboardStats from '@/components/DashboardStats';
@@ -19,7 +21,8 @@ type SupportFilter = 'all' | 'high' | 'medium' | 'low';
 
 const Dashboard = () => {
   const { t } = useTranslation();
-  const { patients, caregiver } = useApp();
+  const { toast } = useToast();
+  const { patients, caregiver, refreshData } = useApp();
   const navigate = useNavigate();
 
   // Redirect Parents to their specific dashboard if they somehow land here
@@ -123,9 +126,29 @@ const Dashboard = () => {
               <div className="relative flex items-center gap-2">
                 <span className="hidden md:inline-block text-sm font-medium text-muted-foreground">Voice Task:</span>
                 <VoiceInputButton
-                  onTranscription={(text) => {
+                  onTranscription={async (text) => {
                     console.log("Voice Command Received:", text);
-                    alert(`Voice Command Processed:\nAdded task from: "${text}"`);
+                    try {
+                      // Attempt to create a general task (using first patient as placeholder or patient 1)
+                      // Ideally we'd have a 'general' task endpoint, but for now we'll associate with a default patient
+                      // or just show a more prominent success message.
+                      const res = await api.post('/tasks', {
+                        pwid_id: patients[0]?.id || 1,
+                        title: text,
+                        description: `Global voice command: "${text}"`,
+                        category: 'other',
+                        priority: 'medium'
+                      });
+                      if (res.status === 201) {
+                        await refreshData();
+                        toast({
+                          title: "Voice Task Captured",
+                          description: `Saved: "${text}"`,
+                        });
+                      }
+                    } catch (err) {
+                      toast({ title: "Voice Capture Error", description: "Failed to save voice command.", variant: "destructive" });
+                    }
                   }}
                 />
               </div>

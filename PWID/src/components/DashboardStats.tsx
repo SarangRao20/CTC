@@ -8,26 +8,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const DashboardStats = () => {
     const { t } = useTranslation();
-    const { caregiver } = useApp();
-    const [stats, setStats] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const { caregiver, stats, refreshData } = useApp();
+    const [loading, setLoading] = useState(!stats);
 
     useEffect(() => {
-        const fetchStats = async () => {
-            if (!caregiver?.ngo_name) return;
-
-            try {
-                const response = await api.get(`/dashboard/stats?ngo=${caregiver.ngo_name}`);
-                setStats(response.data);
-            } catch (error) {
-                console.error('Failed to fetch dashboard stats:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchStats();
-    }, [caregiver]);
+        if (!stats) {
+            setLoading(true);
+            refreshData().finally(() => setLoading(false));
+        } else {
+            setLoading(false);
+        }
+    }, [stats, refreshData]);
 
     if (loading) {
         return (

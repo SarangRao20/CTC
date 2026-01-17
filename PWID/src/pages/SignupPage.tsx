@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -29,10 +29,11 @@ const SignupPage: React.FC = () => {
   const [errors, setErrors] = useState<{[k:string]: string}>({});
   const [submitting, setSubmitting] = useState(false);
 
-  if (isAuthenticated) {
-    // If already logged in, redirect to dashboard
-    navigate('/dashboard');
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const validate = () => {
     const e: {[k:string]: string} = {};
